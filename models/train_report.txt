@@ -1,0 +1,33 @@
+CopetraNova -- Training Report
+============================================================
+Dataset rows     : 92,875
+Dev rows         : 87,143
+OOS rows         : 5,732
+Features (final) : 10
+
+Walk-forward CV results:
+  Fold 1  2025-10-01 to 2025-11-01  acc=44.0%  BUY=51.6%  SELL=50.9%
+  Fold 2  2025-11-01 to 2025-12-01  acc=43.2%  BUY=67.3%  SELL=34.4%
+  Fold 3  2025-12-01 to 2026-01-01  acc=43.2%  BUY=70.8%  SELL=33.8%
+  Fold 4  2026-01-01 to 2026-02-01  acc=46.9%  BUY=66.7%  SELL=40.2%
+
+WF mean accuracy : 44.3%
+WF min  accuracy : 43.2%
+
+Train accuracy   : 51.9%
+OOS RF accuracy  : 45.7%
+OOS XGB accuracy : 45.9%
+OOS Voted acc    : 46.0%  (agreement rate: 88%)
+Overfitting gap  : 6.3%  (PASS)
+
+Final feature list:
+  body
+  range
+  upper_wick
+  lower_wick
+  price_vs_ema50
+  momentum
+  acceleration
+  atr
+  volatility
+  atr_pct

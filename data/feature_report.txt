@@ -1,0 +1,28 @@
+CopetraNova -- Feature Engine Report
+==================================================
+Training window : 2022-06-01 to 2026-12-31
+Total samples   : 92,875
+Threshold       : $0.90 (6 pip target + 3 pip spread)
+Features        : 15
+
+Class balance:
+  HOLD (0): 40,887 (44.0%)
+  BUY (1): 26,806 (28.9%)
+  SELL (2): 25,182 (27.1%)
+
+Feature list:
+  body
+  range
+  upper_wick
+  lower_wick
+  price_pos
+  ema_gap_fast
+  ema_gap_slow
+  price_vs_ema50
+  price_vs_ema200
+  momentum
+  acceleration
+  atr
+  volatility
+  atr_pct
+  rsi
