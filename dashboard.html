@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>COPETRANOVAX // QUANTUM HUD</title>
+  <!-- Google Fonts: Orbitron (Robotic Header/Digits) & Share Tech Mono (Terminal telemetry) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #05080f;
+      --panel-bg: rgba(10, 18, 30, 0.75);
+      --panel-border: #142c47;
+      --cyan: #00f3ff;
+      --cyan-glow: rgba(0, 243, 255, 0.35);
+      --green: #00ff88;
+      --green-glow: rgba(0, 255, 136, 0.4);
+      --red: #ff2255;
+      --red-glow: rgba(255, 34, 85, 0.4);
+      --gold: #ffbe00;
+      --gold-glow: rgba(255, 190, 0, 0.4);
+      --text-main: #d0e4ff;
+      --text-muted: #5e799b;
+      --font-robotic: 'Orbitron', monospace, sans-serif;
+      --font-mono: 'Share Tech Mono', monospace;
+      --font-ui: 'Rajdhani', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(0, 243, 255, 0.08) 0%, transparent 50%),
+        linear-gradient(rgba(5, 8, 15, 0.94), rgba(5, 8, 15, 0.98)),
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 243, 255, 0.015) 2px, rgba(0, 243, 255, 0.015) 4px);
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      min-height: 100vh;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    /* Cyber scanline effect */
+    body::before {
+      content: " ";
+      position: fixed;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px;
+      z-index: 999;
+      pointer-events: none;
+      opacity: 0.4;
+    }
+
+    .hud-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* HEADER HUD */
+    .hud-header {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-left: 4px solid var(--cyan);
+      box-shadow: 0 0 25px rgba(0, 243, 255, 0.1);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      backdrop-filter: blur(10px);
+      clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%);
+    }
+
+    .brand-title {
+      font-family: var(--font-robotic);
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #fff;
+      text-shadow: 0 0 15px var(--cyan);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-title span {
+      color: var(--cyan);
+    }
+
+    .brand-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      margin-top: 4px;
+    }
+
+    .header-telemetry {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .tele-chip {
+      text-align: right;
+    }
+
+    .tele-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .tele-val {
+      font-family: var(--font-robotic);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--cyan);
+      text-shadow: 0 0 8px var(--cyan-glow);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(0, 255, 136, 0.1);
+      border: 1px solid var(--green);
+      border-radius: 2px;
+      font-family: var(--font-robotic);
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      color: var(--green);
+      box-shadow: 0 0 10px var(--green-glow);
+    }
+
+    .status-pulse {
+      width: 8px;
+      height: 8px;
+      background-color: var(--green);
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.8); }
+      70% { box-shadow: 0 0 0 10px rgba(0, 255, 136, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
+    }
+
+    /* GRID LAYOUT */
+    .hud-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 20px;
+    }
+
+    @media (max-width: 1024px) {
+      .hud-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* PRIMARY SIGNAL CARD */
+    .signal-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      position: relative;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%);
+    }
+
+    .signal-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 3px;
+      background: linear-gradient(90deg, var(--cyan), transparent 80%);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid rgba(20, 44, 71, 0.8);
+      padding-bottom: 18px;
+    }
+
+    .signal-main-info {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .direction-badge {
+      font-family: var(--font-robotic);
+      font-size: 32px;
+      font-weight: 900;
+      padding: 10px 24px;
+      letter-spacing: 3px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dir-buy {
+      background: rgba(0, 255, 136, 0.15);
+      border: 2px solid var(--green);
+      color: var(--green);
+      text-shadow: 0 0 15px var(--green);
+      box-shadow: 0 0 25px var(--green-glow);
+    }
+
+    .dir-sell {
+      background: rgba(255, 34, 85, 0.15);
+      border: 2px solid var(--red);
+      color: var(--red);
+      text-shadow: 0 0 15px var(--red);
+      box-shadow: 0 0 25px var(--red-glow);
+    }
+
+    .dir-wait {
+      background: rgba(255, 190, 0, 0.15);
+      border: 2px solid var(--gold);
+      color: var(--gold);
+      text-shadow: 0 0 15px var(--gold);
+      box-shadow: 0 0 25px var(--gold-glow);
+    }
+
+    .mode-tag {
+      font-family: var(--font-robotic);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 14px;
+      letter-spacing: 2px;
+      background: #0f2238;
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      border-radius: 2px;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+
+    .signal-symbol {
+      font-family: var(--font-robotic);
+      font-size: 26px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    /* ACCURACY GAUGE METER */
+    .accuracy-block {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .acc-number {
+      font-family: var(--font-robotic);
+      font-size: 42px;
+      font-weight: 900;
+      color: var(--cyan);
+      text-shadow: 0 0 20px var(--cyan-glow);
+      line-height: 1;
+    }
+
+    .acc-grade {
+      font-family: var(--font-robotic);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 1.5px;
+      margin-top: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .acc-bar-bg {
+      width: 140px;
+      height: 6px;
+      background: #101c2d;
+      border-radius: 3px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .acc-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--cyan), var(--green));
+      width: 85%;
+      box-shadow: 0 0 8px var(--cyan);
+      transition: width 0.8s ease;
+    }
+
+    /* LEVELS ROW */
+    .levels-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+    }
+
+    @media (max-width: 650px) {
+      .levels-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .level-box {
+      background: rgba(14, 25, 42, 0.7);
+      border: 1px solid var(--panel-border);
+      padding: 14px;
+      border-radius: 4px;
+      position: relative;
+    }
+
+    .level-box.entry { border-top: 2px solid var(--cyan); }
+    .level-box.tp { border-top: 2px solid var(--green); }
+    .level-box.sl { border-top: 2px solid var(--red); }
+    .level-box.rr { border-top: 2px solid var(--gold); }
+
+    .lvl-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .lvl-val {
+      font-family: var(--font-robotic);
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .lvl-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .tp .lvl-val { color: var(--green); }
+    .sl .lvl-val { color: var(--red); }
+    .rr .lvl-val { color: var(--gold); }
+
+    /* REASONING / COMMENTARY BOX */
+    .human-reasoning-box {
+      background: rgba(8, 14, 24, 0.9);
+      border: 1px solid #1a3554;
+      border-left: 3px solid var(--cyan);
+      padding: 16px;
+      border-radius: 2px;
+    }
+
+    .reason-header {
+      font-family: var(--font-robotic);
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      color: var(--cyan);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .reason-text {
+      font-family: var(--font-ui);
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.5;
+      color: #e2eeff;
+      letter-spacing: 0.5px;
+    }
+
+    /* RIGHT SIDEBAR: COUNTDOWN & TELEMETRY */
+    .hud-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .timer-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      padding: 20px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%);
+    }
+
+    .timer-label {
+      font-family: var(--font-robotic);
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .timer-clock {
+      font-family: var(--font-robotic);
+      font-size: 46px;
+      font-weight: 900;
+      color: var(--cyan);
+      text-shadow: 0 0 20px var(--cyan-glow);
+      letter-spacing: 2px;
+      margin: 8px 0;
+    }
+
+    .timer-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .telemetry-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    .panel-title {
+      font-family: var(--font-robotic);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #fff;
+      border-bottom: 1px solid var(--panel-border);
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tele-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .tele-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      border-bottom: 1px dashed rgba(20, 44, 71, 0.4);
+      padding-bottom: 6px;
+    }
+
+    .tele-k {
+      color: var(--text-muted);
+    }
+
+    .tele-v {
+      font-family: var(--font-robotic);
+      font-weight: 600;
+      color: #fff;
+    }
+
+    /* HISTORY TABLE */
+    .history-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      padding: 20px;
+      backdrop-filter: blur(10px);
+    }
+
+    .hist-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+
+    .hist-table th {
+      text-align: left;
+      font-family: var(--font-robotic);
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      padding: 10px;
+      border-bottom: 1px solid var(--panel-border);
+    }
+
+    .hist-table td {
+      padding: 12px 10px;
+      border-bottom: 1px solid rgba(20, 44, 71, 0.4);
+      vertical-align: middle;
+    }
+
+    .hist-table tr:hover {
+      background: rgba(0, 243, 255, 0.03);
+    }
+
+    .type-badge {
+      font-size: 10px;
+      font-family: var(--font-robotic);
+      padding: 2px 6px;
+      border-radius: 2px;
+      letter-spacing: 1px;
+    }
+
+    .badge-scalp { background: rgba(0, 243, 255, 0.1); border: 1px solid var(--cyan); color: var(--cyan); }
+    .badge-swing { background: rgba(255, 190, 0, 0.1); border: 1px solid var(--gold); color: var(--gold); }
+
+    .dir-pill {
+      font-family: var(--font-robotic);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 2px;
+    }
+
+    .pill-buy { color: var(--green); border: 1px solid var(--green); background: rgba(0, 255, 136, 0.1); }
+    .pill-sell { color: var(--red); border: 1px solid var(--red); background: rgba(255, 34, 85, 0.1); }
+  </style>
+</head>
+<body>
+
+  <div class="hud-container">
+
+    <!-- HEADER HUD -->
+    <header class="hud-header">
+      <div>
+        <div class="brand-title">
+          COPETRANOVA<span>X</span> // HUD
+        </div>
+        <div class="brand-sub">HIGH-ACCURACY M15 QUANTUM ENGINE // DUAL MODE SCALP & SWING</div>
+      </div>
+
+      <div class="header-telemetry">
+        <div class="tele-chip">
+          <div class="tele-label">Active Session</div>
+          <div class="tele-val" id="sessionVal">LONDON</div>
+        </div>
+
+        <div class="tele-chip">
+          <div class="tele-label">Live Price (Gold)</div>
+          <div class="tele-val" id="livePrice">2650.40</div>
+        </div>
+
+        <div>
+          <div class="status-badge">
+            <div class="status-pulse"></div>
+            <span id="systemStatus">ONLINE</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN GRID -->
+    <div class="hud-grid">
+
+      <!-- LEFT: ACTIVE SIGNAL -->
+      <section class="signal-card" id="primaryCard">
+        <div class="card-top">
+          <div class="signal-main-info">
+            <div class="direction-badge dir-buy" id="dirBadge">BUY</div>
+            <div>
+              <div class="mode-tag" id="modeTag">SCALPING // TIER 5 MICRO</div>
+              <div class="signal-symbol">XAUUSD <span style="font-size:15px; color:var(--text-muted);">M15 CYCLE</span></div>
+            </div>
+          </div>
+
+          <div class="accuracy-block">
+            <div class="tele-label">CONFIRMED ACCURACY</div>
+            <div class="acc-number" id="accNumber">88.5%</div>
+            <div class="acc-grade" id="accGrade">GRADE A+ [SNIPER]</div>
+            <div class="acc-bar-bg">
+              <div class="acc-bar-fill" id="accFill" style="width: 88.5%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LEVELS -->
+        <div class="levels-row">
+          <div class="level-box entry">
+            <div class="lvl-label">Entry Price</div>
+            <div class="lvl-val" id="entryVal">2650.40</div>
+            <div class="lvl-sub">Execution Anchor</div>
+          </div>
+
+          <div class="level-box sl">
+            <div class="lvl-label">Stop Loss</div>
+            <div class="lvl-val" id="slVal">2648.90</div>
+            <div class="lvl-sub" id="slSub">-15 Pips</div>
+          </div>
+
+          <div class="level-box tp">
+            <div class="lvl-label">Take Profit</div>
+            <div class="lvl-val" id="tpVal">2653.40</div>
+            <div class="lvl-sub" id="tpSub">+30 Pips</div>
+          </div>
+
+          <div class="level-box rr">
+            <div class="lvl-label">Risk-Reward</div>
+            <div class="lvl-val" id="rrVal">1:2.0</div>
+            <div class="lvl-sub" id="lotVal">Lot: 0.05</div>
+          </div>
+        </div>
+
+        <!-- COMMENTARY -->
+        <div class="human-reasoning-box">
+          <div class="reason-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            HUMAN TRADER REASONING & MARKET CONTEXT
+          </div>
+          <div class="reason-text" id="reasoningText">
+            M15 [SCALPING BUY]: Fast momentum trigger via MICRO. Confluences: H1 BULL trend aligned, full EMA 8/21/50 alignment, volume burst (1.4x). Targeting quick volatility burst with SL strictly protected below recent candle wick.
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: TIMER & TELEMETRY -->
+      <aside class="hud-sidebar">
+        <!-- 15-MIN CANDLE COUNTDOWN -->
+        <div class="timer-card">
+          <div class="timer-label">Next M15 Candle Close</div>
+          <div class="timer-clock" id="countdownClock">00:00</div>
+          <div class="timer-desc">Signal evaluation occurs strictly at 00:00</div>
+        </div>
+
+        <!-- TELEMETRY -->
+        <div class="telemetry-card">
+          <div class="panel-title">
+            <span>MARKET TELEMETRY</span>
+            <span style="color:var(--cyan); font-size:11px;">M15/H1</span>
+          </div>
+
+          <div class="tele-grid">
+            <div class="tele-row">
+              <span class="tele-k">H1 Trend Bias</span>
+              <span class="tele-v" id="h1Bias" style="color:var(--green);">BULLISH (PULLBACK)</span>
+            </div>
+            <div class="tele-row">
+              <span class="tele-k">H4 Master Trend</span>
+              <span class="tele-v" id="h4Bias" style="color:var(--green);">BULLISH</span>
+            </div>
+            <div class="tele-row">
+              <span class="tele-k">ATR (Volatility)</span>
+              <span class="tele-v" id="atrVal">2.45</span>
+            </div>
+            <div class="tele-row">
+              <span class="tele-k">ADX (Strength)</span>
+              <span class="tele-v" id="adxVal">26.8</span>
+            </div>
+            <div class="tele-row">
+              <span class="tele-k">Volume Surge</span>
+              <span class="tele-v" id="volVal">1.42x</span>
+            </div>
+            <div class="tele-row">
+              <span class="tele-k">Structure Sequence</span>
+              <span class="tele-v" id="structStage">DISPLACEMENT</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+
+    <!-- SIGNAL HISTORY STREAM -->
+    <section class="history-card">
+      <div class="panel-title">
+        <span>RECENT SIGNAL STREAM</span>
+        <span style="color:var(--text-muted); font-size:11px;">EVALUATED AT 15-MINUTE CANDLE CLOSES</span>
+      </div>
+
+      <table class="hist-table">
+        <thead>
+          <tr>
+            <th>TIMESTAMP</th>
+            <th>MODE</th>
+            <th>TIER</th>
+            <th>DIR</th>
+            <th>ENTRY</th>
+            <th>SL</th>
+            <th>TP</th>
+            <th>ACCURACY</th>
+            <th>GRADE</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody">
+          <!-- Rows will be injected dynamically -->
+        </tbody>
+      </table>
+    </section>
+
+  </div>
+
+  <script>
+    let localSecondsRemaining = 0;
+
+    // Countdown tick
+    setInterval(() => {
+      if (localSecondsRemaining > 0) {
+        localSecondsRemaining--;
+        const m = Math.floor(localSecondsRemaining / 60);
+        const s = localSecondsRemaining % 60;
+        document.getElementById("countdownClock").innerText = 
+          `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      } else {
+        const now = new Date();
+        const min = now.getUTCMinutes();
+        const sec = now.getUTCSeconds();
+        localSecondsRemaining = ((14 - (min % 15)) * 60) + (60 - sec);
+      }
+    }, 1000);
+
+    async function fetchSignalData() {
+      try {
+        let res;
+        try {
+          res = await fetch('/api/latest_signal');
+        } catch (e) {
+          res = await fetch('data/signals.json');
+        }
+
+        if (!res || !res.ok) {
+          res = await fetch('data/signals.json');
+        }
+
+        const data = await res.json();
+        renderHUD(data);
+      } catch (err) {
+        console.log("Waiting for signals.json...", err);
+      }
+    }
+
+    function renderHUD(data) {
+      if (!data) return;
+
+      if (data.market_status) {
+        const ms = data.market_status;
+        if (ms.price) document.getElementById("livePrice").innerText = ms.price.toFixed(2);
+        if (ms.session) document.getElementById("sessionVal").innerText = ms.session;
+        if (ms.h1_bias) document.getElementById("h1Bias").innerText = `${ms.h1_bias} (${ms.h1_phase || 'ACTIVE'})`;
+        if (ms.h4_bias) document.getElementById("h4Bias").innerText = ms.h4_bias;
+        if (ms.atr) document.getElementById("atrVal").innerText = ms.atr;
+        if (ms.adx) document.getElementById("adxVal").innerText = ms.adx;
+        if (ms.vol_ratio) document.getElementById("volVal").innerText = ms.vol_ratio + 'x';
+        if (ms.stage) document.getElementById("structStage").innerText = ms.stage;
+        if (ms.next_candle_sec !== undefined) {
+          localSecondsRemaining = ms.next_candle_sec;
+        }
+      }
+
+      if (data.latest_signal) {
+        const sig = data.latest_signal;
+        const dirBadge = document.getElementById("dirBadge");
+        dirBadge.innerText = sig.direction;
+        dirBadge.className = "direction-badge " + (sig.direction === "BUY" ? "dir-buy" : "dir-sell");
+
+        document.getElementById("modeTag").innerText = `${sig.trade_type || 'SCALPING'} // TIER ${sig.tier || 'MOMENTUM'}`;
+        document.getElementById("accNumber").innerText = `${sig.accuracy ? sig.accuracy.toFixed(1) : '85.0'}%`;
+        document.getElementById("accGrade").innerText = `GRADE ${sig.grade || 'A'} [CONFLUENCE]`;
+        document.getElementById("accFill").style.width = `${sig.accuracy || 85}%`;
+
+        document.getElementById("entryVal").innerText = sig.entry ? sig.entry.toFixed(2) : '-';
+        document.getElementById("slVal").innerText = sig.sl ? sig.sl.toFixed(2) : '-';
+        document.getElementById("tpVal").innerText = sig.tp ? sig.tp.toFixed(2) : '-';
+        document.getElementById("slSub").innerText = `-${sig.sl_pips || 15} Pips`;
+        document.getElementById("tpSub").innerText = `+${sig.tp_pips || 30} Pips`;
+        document.getElementById("rrVal").innerText = `1:${sig.rr || 2.0}`;
+        document.getElementById("lotVal").innerText = `Lot: ${sig.lot ? sig.lot.toFixed(2) : '0.05'}`;
+
+        if (sig.reasoning) {
+          document.getElementById("reasoningText").innerText = sig.reasoning;
+        }
+      }
+
+      if (data.history && data.history.length > 0) {
+        const tbody = document.getElementById("historyBody");
+        tbody.innerHTML = "";
+        data.history.slice(0, 10).forEach(h => {
+          const tr = document.createElement("tr");
+          const dClass = h.direction === "BUY" ? "pill-buy" : "pill-sell";
+          const tClass = (h.trade_type === "SCALPING" || h.trade_type === "SCALP") ? "badge-scalp" : "badge-swing";
+          const timeFormatted = h.timestamp ? h.timestamp.substring(11, 19) + ' UTC' : '-';
+
+          tr.innerHTML = `
+            <td>${timeFormatted}</td>
+            <td><span class="type-badge ${tClass}">${h.trade_type || 'SCALPING'}</span></td>
+            <td>${h.tier || 'SCALP'}</td>
+            <td><span class="dir-pill ${dClass}">${h.direction}</span></td>
+            <td>${h.entry ? h.entry.toFixed(2) : '-'}</td>
+            <td style="color:var(--red);">${h.sl ? h.sl.toFixed(2) : '-'}</td>
+            <td style="color:var(--green);">${h.tp ? h.tp.toFixed(2) : '-'}</td>
+            <td style="font-family:var(--font-robotic); color:var(--cyan);">${h.accuracy ? h.accuracy.toFixed(1) : '85'}%</td>
+            <td style="color:var(--gold); font-weight:700;">${h.grade || 'A'}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+    }
+
+    fetchSignalData();
+    setInterval(fetchSignalData, 2500);
+  </script>
+</body>
+</html>

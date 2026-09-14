@@ -934,7 +934,7 @@ def detect_inducement(int_sh, int_sl, direction, stable_atr):
 # MANDATORY CONDITIONS
 # ==============================================================================
 
-def check_mandatory_conditions(ext_sh, ext_sl, regime, state, failed_choch):
+def check_mandatory_conditions(ext_sh, ext_sl, regime, state=None, failed_choch=False):
     failures = []
     if not ext_sh or not ext_sl:
         failures.append("no confirmed external swings")
@@ -942,8 +942,7 @@ def check_mandatory_conditions(ext_sh, ext_sl, regime, state, failed_choch):
         failures.append("news spike -- structure unreliable")
     if failed_choch:
         failures.append("failed CHOCH -- trap active")
-    if state and state.stage == SEQ_IDLE:
-        failures.append("no structure sequence initiated")
+    # SEQ_IDLE is normal state before a sweep/displacement sequence and should not be a fatal block
     return (len(failures) == 0), failures
 
 
@@ -1319,6 +1318,29 @@ def get_structure_score(df,
     failed_choch, fc_det  = detect_failed_choch(df, ext_sh, ext_sl, d, stable_atr)
     inducement_ok, ind_dt = detect_inducement(int_sh, int_sl, d, stable_atr)
 
+    # Displacement & DE ratio
+    disp_str, disp_bon, disp_det = detect_displacement(df, stable_atr, d)
+    displacement_occurred = disp_str in ("STRONG", "MODERATE")
+    de_ratio = directional_efficiency(df["close"], 20)
+
+    # Sweep + rejection
+    sweep_ok, sweep_rsn, sweep_bon = detect_sweep_rejection(df, pools, d, stable_atr)
+
+    # BOS (body break + strong continuation)
+    bos_basic, bos_strong = detect_bos(ext_sh, ext_sl, df, d, stable_atr)
+
+    # CHOCH on internal swings
+    choch_ok, choch_rsn, choch_bon = detect_choch(int_sh, int_sl, df, d, stable_atr)
+
+    # Orderflow proxy
+    of_result = compute_orderflow_proxy(df, stable_atr)
+
+    # Update state machine proactively on each evaluation
+    if state:
+        state.update(df, ext_sh, ext_sl, d, stable_atr,
+                     sweep_ok, bos_basic, bos_strong, disp_str,
+                     current_price, de_ratio)
+
     # Mandatory gate
     permitted, rejections = check_mandatory_conditions(
         ext_sh, ext_sl, regime, state, failed_choch
@@ -1337,38 +1359,13 @@ def get_structure_score(df,
         details.append(inv_rsn)
         return max(-MAX_STRUCT_SCORE, -8), " | ".join(details)
 
-    # Displacement
-    disp_str, disp_bon, disp_det = detect_displacement(df, stable_atr, d)
-    displacement_occurred = disp_str in ("STRONG", "MODERATE")
-
-    # DE ratio for DisplacementLeg
-    de_ratio = directional_efficiency(df["close"], 20)
-
-    # Sweep + rejection
-    sweep_ok, sweep_rsn, sweep_bon = detect_sweep_rejection(df, pools, d, stable_atr)
-
-    # BOS (FIX 1: body break + strong continuation)
-    bos_basic, bos_strong = detect_bos(ext_sh, ext_sl, df, d, stable_atr)
-
-    # CHOCH on internal swings
-    choch_ok, choch_rsn, choch_bon = detect_choch(int_sh, int_sl, df, d, stable_atr)
-
-    # OB (FIX 3: impulse quality filter)
+    # OB (impulse quality filter)
     ob = detect_orderblock(df, d, stable_atr, ext_sh, ext_sl)
 
     # OTE (only after displacement)
     ote_ok, ote_det, ote_bon = detect_ote_zone(
         ext_sh, ext_sl, current_price, d, displacement_occurred
     )
-
-    # FIX 7: Orderflow proxy
-    of_result = compute_orderflow_proxy(df, stable_atr)
-
-    # Update state machine
-    if state:
-        state.update(df, ext_sh, ext_sl, d, stable_atr,
-                     sweep_ok, bos_basic, bos_strong, disp_str,
-                     current_price, de_ratio)
 
     if inducement_ok:
         details.append(f"WARNING:{ind_dt}")

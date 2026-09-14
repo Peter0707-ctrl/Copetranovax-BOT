@@ -1,0 +1,56 @@
+{
+  "latest_signal": {
+    "signal_id": "TREND_B_20260914223123",
+    "direction": "BUY",
+    "trade_type": "INTRA-SWING",
+    "tier": "TREND",
+    "accuracy": 94.5,
+    "grade": "A+",
+    "entry": 4724.01,
+    "sl": 4720.01,
+    "tp": 4734.01,
+    "sl_pips": 40,
+    "tp_pips": 100,
+    "rr": 2.5,
+    "lot": 0.05,
+    "reasoning": "M15 [INTRA-SWING BUY]: High-probability swing setup via TREND. Confluences: H1 BULL trend aligned, H1 pullback discount, full EMA 8/21/50 alignment. Positioning for multi-hour trend continuation toward key liquidity pools.",
+    "session": "LONDON",
+    "timestamp": "2026-09-14T22:31:23.574646+00:00"
+  },
+  "history": [
+    {
+      "signal_id": "SWING_B_20260914223123",
+      "direction": "BUY",
+      "trade_type": "INTRA-SWING",
+      "tier": "SWING",
+      "accuracy": 94.5,
+      "grade": "A+",
+      "entry": 4724.01,
+      "sl": 4720.01,
+      "tp": 4734.01,
+      "sl_pips": 40,
+      "tp_pips": 100,
+      "rr": 2.5,
+      "lot": 0.05,
+      "reasoning": "M15 [INTRA-SWING BUY]: High-probability swing setup via SWING. Confluences: H1 BULL trend aligned, H1 pullback discount, full EMA 8/21/50 alignment. Positioning for multi-hour trend continuation toward key liquidity pools.",
+      "session": "LONDON",
+      "timestamp": "2026-09-14T22:31:23.457960+00:00"
+    }
+  ],
+  "market_status": {
+    "symbol": "XAUUSD",
+    "price": 4724.01,
+    "session": "LONDON",
+    "h1_bias": "BULL",
+    "h1_phase": "PULLBACK",
+    "h4_bias": "BULL",
+    "adx": 24.8,
+    "atr": 5.05,
+    "vol_ratio": 1.24,
+    "struct_score": 10,
+    "stage": "IDLE",
+    "risk_status": "OK: RISK BUDGET ACTIVE",
+    "next_candle_sec": 480,
+    "last_update": "2026-09-14T22:31:23.599696+00:00"
+  }
+}
