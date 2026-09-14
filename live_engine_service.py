@@ -74,17 +74,31 @@ def run_live_service():
                 feat = compute_features(df15)
                 feat["_atr_value"] = atr_val
                 state = symbol_states[sym]
-                htf_bias = {"H1": "BULL", "H1_phase": "PULLBACK", "H4": "BULL", "H4_phase": "IMPULSE"}
+
+                # Real Dynamic HTF Bias calculated directly from live market bars
+                df_h1 = df15.resample("1h").agg({
+                    "open": "first", "high": "max", "low": "min", "close": "last"
+                }).dropna()
+                df_h4 = df15.resample("4h").agg({
+                    "open": "first", "high": "max", "low": "min", "close": "last"
+                }).dropna()
+                htf_bias = compute_htf_bias(df_h1, df_h4)
+
+                # Real Spread
+                if MT5_AVAILABLE:
+                    spread_pips = get_spread_pips(sym)
+                else:
+                    spread_pips = round(max(0.5, min(spec["max_spread"], (atr_val / pip_sz) * 0.04)), 1)
 
                 symbols_telemetry[sym] = {
                     "price": round(cur_price, digits),
-                    "spread_pips": 1.2 if sym != "EURUSD" else 0.8,
+                    "spread_pips": spread_pips,
                     "max_spread": spec["max_spread"],
-                    "spread_safe": True,
+                    "spread_safe": spread_pips <= spec["max_spread"],
                     "adx": feat["_adx"],
                     "atr": round(atr_val, digits),
-                    "h1_bias": "BULL",
-                    "h1_phase": "PULLBACK",
+                    "h1_bias": htf_bias.get("H1", "NEUTRAL"),
+                    "h1_phase": htf_bias.get("H1_phase", "RANGING"),
                     "stage": state.stage,
                 }
 
@@ -115,17 +129,21 @@ def run_live_service():
 
                 candidate_signals.append({
                     "symbol": sym, "direction": d, "price": cur_price,
-                    "acc": acc, "grade": grade
+                    "acc": acc, "grade": grade, "feat": feat
                 })
 
-            # Update market telemetry
+            # Update market telemetry with real Gold calculations
             top_sym = "XAUUSD"
             top_price = symbols_telemetry.get(top_sym, {}).get("price", 0.0)
+            top_tele = symbols_telemetry.get(top_sym, {})
+            gold_sig = next((c for c in candidate_signals if c["symbol"] == "XAUUSD"), None)
+            top_feat = gold_sig["feat"] if gold_sig else feat
             next_candle_sec = max(0, ((14 - (now_dt.minute % 15)) * 60) + (60 - now_dt.second))
 
             update_market_status_json(
-                price=top_price, session=session, htf_bias={"H1": "BULL"},
-                feat={"_adx": 22.0, "_atr_value": 5.0}, struct_score=2, stage="ACTIVE",
+                price=top_price, session=session,
+                htf_bias={"H1": top_tele.get("h1_bias", "NEUTRAL"), "H1_phase": top_tele.get("h1_phase", "RANGING")},
+                feat=top_feat, struct_score=2, stage=symbol_states[top_sym].stage,
                 risk_status="OK: LIVE REAL-TIME FEED ACTIVE", next_candle_sec=next_candle_sec,
                 symbol=top_sym, symbols_telemetry=symbols_telemetry
             )
