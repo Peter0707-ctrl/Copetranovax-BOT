@@ -96,11 +96,11 @@ class HUDRequestHandler(SimpleHTTPRequestHandler):
 def run_server(port=PORT):
     server_address = ("", port)
     httpd = HTTPServer(server_address, HUDRequestHandler)
-    print(f"\n  ══════════════════════════════════════════════════════")
+    print(f"\n  ======================================================")
     print(f"  COPETRANOVAX // QUANTUM ROBOTIC HUD SERVER")
     print(f"  Live UI: http://localhost:{port}")
     print(f"  Press Ctrl+C to stop")
-    print(f"  ══════════════════════════════════════════════════════\n")
+    print(f"  ======================================================\n")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

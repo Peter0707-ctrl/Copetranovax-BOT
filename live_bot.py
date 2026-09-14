@@ -1456,26 +1456,26 @@ def run_bot():
                 # Send Telegram Alert
                 dir_name = "BUY" if direction == 1 else "SELL"
                 telegram_alert_text = (
-                    f"🚀 <b>COPETRANOVAX // {sym} SIGNAL</b> 🚀\n\n"
-                    f"📍 <b>ACTION:</b> <code>{dir_name} NOW</code>\n"
-                    f"🎯 <b>MODE:</b> {trade_type} ({tier})\n"
-                    f"⭐ <b>ACCURACY:</b> {accuracy:.1f}% [Grade: {grade}]\n\n"
-                    f"💵 <b>ENTRY:</b> <code>{current_price}</code>\n"
-                    f"🛑 <b>STOP LOSS:</b> <code>{tpsl['sl']}</code> ({tpsl['sl_pips']} pips)\n"
-                    f"🎯 <b>TAKE PROFIT 1:</b> <code>{tpsl['tp1']}</code> ({tpsl['tp1_pips']} pips) [Funga nusu ya faida]\n"
-                    f"🎯 <b>TAKE PROFIT 2:</b> <code>{tpsl['tp2']}</code> ({tpsl['tp2_pips']} pips) [Trend Runner]\n"
-                    f"⚖️ <b>RISK-REWARD:</b> 1:{tpsl['rr']} | Lot: {lot:.2f}\n\n"
-                    f"💡 <b>MAAGIZO YA KUTRADE:</b>\n"
+                    f"<b>[COPETRANOVAX // {sym} SIGNAL]</b>\n\n"
+                    f"<b>ACTION:</b> <code>{dir_name} NOW</code>\n"
+                    f"<b>MODE:</b> {trade_type} ({tier})\n"
+                    f"<b>ACCURACY:</b> {accuracy:.1f}% [Grade: {grade}]\n\n"
+                    f"<b>ENTRY:</b> <code>{current_price}</code>\n"
+                    f"<b>STOP LOSS:</b> <code>{tpsl['sl']}</code> ({tpsl['sl_pips']} pips)\n"
+                    f"<b>TAKE PROFIT 1:</b> <code>{tpsl['tp1']}</code> ({tpsl['tp1_pips']} pips) [Funga nusu ya faida]\n"
+                    f"<b>TAKE PROFIT 2:</b> <code>{tpsl['tp2']}</code> ({tpsl['tp2_pips']} pips) [Trend Runner]\n"
+                    f"<b>RISK-REWARD:</b> 1:{tpsl['rr']} | Lot: {lot:.2f}\n\n"
+                    f"<b>MAAGIZO YA KUTRADE:</b>\n"
                     f"1. Fungua trade ya <b>{dir_name}</b> kwenye <b>{sym}</b> sasa hivi.\n"
                     f"2. Weka Stop Loss kwa <code>{tpsl['sl']}</code>.\n"
                     f"3. Weka Take Profit 1 kwa <code>{tpsl['tp1']}</code> (funga 50% ya lot ukifika hapa).\n"
                     f"4. Faida ikifika +10 pips, sogeza Stop Loss iwe kwenye Entry (Risk-Free).\n\n"
-                    f"🕒 <i>Time: {now.strftime('%H:%M UTC')} | Session: {session}</i>"
+                    f"<i>Time: {now.strftime('%H:%M UTC')} | Session: {session}</i>"
                 )
                 send_telegram_alert(telegram_alert_text)
 
                 print(
-                    f"\n  ═══════════════════════════════════════════════════════════════\n"
+                    f"\n  ===============================================================\n"
                     f"  [SIGNAL ALERT] {now.strftime('%H:%M UTC')} | {sym} {dir_name}\n"
                     f"  MODE     : {trade_type} ({tier})\n"
                     f"  ACCURACY : {accuracy:.1f}% [Grade: {grade}]\n"
@@ -1483,7 +1483,7 @@ def run_bot():
                     f"  TARGETS  : TP1: {tpsl['tp1']} ({tpsl['tp1_pips']} pips) | TP2: {tpsl['tp2']} ({tpsl['tp2_pips']} pips)\n"
                     f"  R:R      : {tpsl['rr']}R | Lot: {lot:.2f}\n"
                     f"  REASONING: {reasoning}\n"
-                    f"  ═══════════════════════════════════════════════════════════════"
+                    f"  ==============================================================="
                 )
 
                 # MT5 execution if available
