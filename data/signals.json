@@ -717,47 +717,31 @@
   "symbols_telemetry": {
     "XAUUSD": {
       "price": 4328.6,
-      "spread_pips": 1.2,
-      "max_spread": 2.8,
-      "spread_safe": true,
-      "adx": 23.9,
-      "atr": 5.52,
-      "h1_bias": "BULL",
-      "h1_phase": "PULLBACK",
-      "stage": "IDLE"
+      "market_open": true,
+      "market_status": "SOKO LIKO WAZI",
+      "session": "ASIA",
+      "session_desc": "ASIA SESSION (TOKYO / SYDNEY) - Soko linatembea polepole (Low Volatility). London itafunguliwa saa 10:00 Asubuhi EAT."
     },
     "EURUSD": {
       "price": 1.15513,
-      "spread_pips": 0.8,
-      "max_spread": 1.5,
-      "spread_safe": true,
-      "adx": 20.2,
-      "atr": 0.00028,
-      "h1_bias": "BULL",
-      "h1_phase": "PULLBACK",
-      "stage": "IDLE"
+      "market_open": true,
+      "market_status": "SOKO LIKO WAZI",
+      "session": "ASIA",
+      "session_desc": "ASIA SESSION (TOKYO / SYDNEY) - Soko linatembea polepole (Low Volatility). London itafunguliwa saa 10:00 Asubuhi EAT."
     },
     "GBPUSD": {
-      "price": 1.35009,
-      "spread_pips": 1.2,
-      "max_spread": 1.8,
-      "spread_safe": true,
-      "adx": 19.4,
-      "atr": 0.00035,
-      "h1_bias": "BULL",
-      "h1_phase": "PULLBACK",
-      "stage": "IDLE"
+      "price": 1.34991,
+      "market_open": true,
+      "market_status": "SOKO LIKO WAZI",
+      "session": "ASIA",
+      "session_desc": "ASIA SESSION (TOKYO / SYDNEY) - Soko linatembea polepole (Low Volatility). London itafunguliwa saa 10:00 Asubuhi EAT."
     },
     "USDJPY": {
-      "price": 154.404,
-      "spread_pips": 1.2,
-      "max_spread": 1.6,
-      "spread_safe": true,
-      "adx": 22.8,
-      "atr": 0.069,
-      "h1_bias": "BULL",
-      "h1_phase": "PULLBACK",
-      "stage": "IDLE"
+      "price": 154.394,
+      "market_open": true,
+      "market_status": "SOKO LIKO WAZI",
+      "session": "ASIA",
+      "session_desc": "ASIA SESSION (TOKYO / SYDNEY) - Soko linatembea polepole (Low Volatility). London itafunguliwa saa 10:00 Asubuhi EAT."
     }
   },
   "pair_signals": {
@@ -866,8 +850,8 @@
     "vol_ratio": 1.0,
     "struct_score": 2,
     "stage": "ACTIVE",
-    "risk_status": "OK: LIVE REAL-TIME FEED ACTIVE",
-    "next_candle_sec": 85,
-    "last_update": "2026-09-14T23:43:42.419475+00:00"
+    "risk_status": "OK: LIVE FEED ACTIVE",
+    "next_candle_sec": 300,
+    "last_update": "2026-09-14T23:56:29.164059+00:00"
   }
 }

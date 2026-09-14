@@ -614,9 +614,9 @@
       </div>
     </div>
     <div class="header-status">
-      <div class="status-pill">
-        <div class="status-dot"></div>
-        <span>LIVE ENGINE ACTIVE</span>
+      <div class="status-pill" id="marketStatusPill">
+        <div class="status-dot" id="marketStatusDot"></div>
+        <span id="marketStatusText">SOKO LIKO WAZI (ASIA SESSION)</span>
       </div>
     </div>
   </header>
@@ -840,9 +840,35 @@
       document.getElementById('cardSymbol').textContent = sym;
       document.getElementById('cardDesc').textContent = (SYMBOL_NAMES[sym] || sym) + ' | 15M TIMEFRAME';
 
+      // Telemetry & Market Open Check
+      const tele = (cachedSignals.symbols_telemetry && cachedSignals.symbols_telemetry[sym]) || {};
+      const isMarketOpen = tele.market_open !== undefined ? tele.market_open : true;
+      const marketStatusMsg = tele.market_status || (isMarketOpen ? 'SOKO LIKO WAZI' : 'SOKO LIMEFUNGWA');
+      const currentSession = tele.session || 'ASIA';
+
+      // Update Header Status Pill
+      const statusPill = document.getElementById('marketStatusPill');
+      const statusDot = document.getElementById('marketStatusDot');
+      const statusText = document.getElementById('marketStatusText');
+      if (statusText && statusDot) {
+        if (!isMarketOpen) {
+          statusText.textContent = 'SOKO LIMEFUNGWA (STANDBY)';
+          statusDot.style.background = 'var(--neon-red)';
+          statusDot.style.boxShadow = '0 0 8px var(--neon-red)';
+        } else {
+          statusText.textContent = 'SOKO LIKO WAZI (' + currentSession + ' SESSION)';
+          statusDot.style.background = 'var(--neon-green)';
+          statusDot.style.boxShadow = '0 0 8px var(--neon-green)';
+        }
+      }
+
       const badge = document.getElementById('cardActionBadge');
       badge.className = 'signal-action-badge';
-      if (action.includes('BUY')) {
+
+      if (!isMarketOpen || action.includes('CLOSED') || action.includes('STANDBY')) {
+        badge.classList.add('badge-standby');
+        badge.textContent = 'STANDBY (SOKO LIMEFUNGWA)';
+      } else if (action.includes('BUY')) {
         badge.classList.add('badge-buy');
         badge.textContent = 'BUY NOW';
       } else if (action.includes('SELL')) {
@@ -858,8 +884,8 @@
       document.getElementById('valTP1').textContent = tp1;
       document.getElementById('valTP2').textContent = tp2;
 
-      document.getElementById('sideAccuracy').textContent = `${acc}% (${grade})`;
-      document.getElementById('sideStyle').textContent = style;
+      document.getElementById('sideAccuracy').textContent = isMarketOpen ? `${acc}% (${grade})` : 'STANDBY';
+      document.getElementById('sideStyle').textContent = isMarketOpen ? style : 'MARKET CLOSED';
       document.getElementById('signalReasoning').textContent = reason;
 
       // Hold Guidance Logic
@@ -869,16 +895,27 @@
       const instrText = document.getElementById('holdInstructionText');
 
       if (typeBadge && durPill && instrText) {
-        if (isSwing) {
+        if (!isMarketOpen) {
+          typeBadge.textContent = 'SOKO LIMEFUNGWA';
+          typeBadge.style.color = 'var(--neon-red)';
+          typeBadge.style.borderColor = 'rgba(255, 51, 102, 0.4)';
+          typeBadge.style.background = 'rgba(255, 51, 102, 0.12)';
+          durPill.textContent = 'HALI: STANDBY';
+          durPill.style.color = 'var(--text-muted)';
+          durPill.style.borderColor = 'rgba(126, 139, 166, 0.4)';
+          durPill.style.background = 'rgba(126, 139, 166, 0.1)';
+          instrText.innerHTML = '<strong>' + marketStatusMsg + '</strong>. Soko la kimataifa limefungwa kwa sasa au liko kwenye mapumziko ya kibenki. Bot haitoi signals mpya hadi soko lifunguliwe.';
+        } else if (isSwing) {
           typeBadge.textContent = 'SWING TRADE';
           typeBadge.style.color = 'var(--neon-cyan)';
           typeBadge.style.borderColor = 'rgba(0, 216, 246, 0.4)';
           typeBadge.style.background = 'rgba(0, 216, 246, 0.12)';
-          durPill.textContent = 'MUDA WA KUSHIKILIA: MASAA 2 HADI 8 (HOLD)';
+          durPill.textContent = (currentSession === 'ASIA') ? 'ASIA: UTULIVU WA USIKU (HOLD 2-8h)' : 'MUDA WA KUSHIKILIA: MASAA 2 HADI 8 (HOLD)';
           durPill.style.color = 'var(--neon-gold)';
           durPill.style.borderColor = 'rgba(255, 190, 26, 0.4)';
           durPill.style.background = 'rgba(255, 190, 26, 0.12)';
-          instrText.innerHTML = 'Hii ni <strong>SWING TRADE</strong>. <strong>Shikilia oda yako (HOLD)</strong> kwa uvumilivu. Ikifika <strong>TP1: ' + tp1 + '</strong>, funga 50% ya faida na u-HOLD nusu iliyobaki kuelekea <strong>TP2: ' + tp2 + '</strong> ukiwa umesogeza Stop Loss kwenye Entry (Risk-Free).';
+          const sessionNote = (currentSession === 'ASIA') ? '<em>(Kumbuka: Kwa sasa ni Asian Session usiku, soko linatembea polepole kusubiri London ifunguliwe saa 10:00 Asubuhi).</em> ' : '';
+          instrText.innerHTML = sessionNote + 'Hii ni <strong>SWING TRADE</strong>. <strong>Shikilia oda yako (HOLD)</strong> kwa uvumilivu. Ikifika <strong>TP1: ' + tp1 + '</strong>, funga 50% ya faida na u-HOLD nusu iliyobaki kuelekea <strong>TP2: ' + tp2 + '</strong> ukiwa umesogeza Stop Loss kwenye Entry (Risk-Free).';
         } else {
           typeBadge.textContent = 'QUICK SCALPING';
           typeBadge.style.color = 'var(--neon-green)';
