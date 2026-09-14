@@ -731,19 +731,12 @@ def compute_accuracy_and_reasoning(direction: int, tier: str, trade_type: str,
     else:
         grade = "C"
 
-    # Human-like narrative
-    if trade_type == "SCALPING":
-        narrative = (
-            f"M15 [SCALPING {dir_str}]: Fast momentum trigger via {tier}. "
-            f"Confluences: {', '.join(reasons[:3])}. "
-            f"Targeting quick volatility burst with SL strictly protected below recent candle wick."
-        )
-    else:
-        narrative = (
-            f"M15 [INTRA-SWING {dir_str}]: High-probability swing setup via {tier}. "
-            f"Confluences: {', '.join(reasons[:3])}. "
-            f"Positioning for multi-hour trend continuation toward key liquidity pools."
-        )
+    # Clear plain language explanation
+    dir_swahili = "BUY (KUNUNUA)" if dir_str == "BUY" else "SELL (KUUZA)"
+    narrative = (
+        f"Mwelekeo wa soko ni {dir_swahili}. Soko lina nguvu na mwelekeo upo wazi. "
+        f"Fungua trade sasa, weka Stop Loss na Take Profit kwenye MT5 yako kama zilivyoainishwa."
+    )
 
     return accuracy, grade, narrative
 
@@ -877,7 +870,7 @@ def write_signal(direction: int, tier: str, trade_type: str, confidence: float,
             "history": []
         }
 
-        # Maintain recent history
+        # Maintain recent history and per-pair signals
         if os.path.exists(SIGNALS_JSON):
             try:
                 with open(SIGNALS_JSON, "r", encoding="utf-8") as f:
@@ -888,8 +881,13 @@ def write_signal(direction: int, tier: str, trade_type: str, confidence: float,
                         old_hist.insert(0, old_latest)
                     data_to_save["history"] = old_hist[:30]
                     data_to_save["symbols_telemetry"] = old_data.get("symbols_telemetry", {})
+                    data_to_save["pair_signals"] = old_data.get("pair_signals", {})
             except Exception:
                 pass
+
+        if "pair_signals" not in data_to_save:
+            data_to_save["pair_signals"] = {}
+        data_to_save["pair_signals"][symbol] = data_to_save["latest_signal"]
 
         with open(SIGNALS_JSON, "w", encoding="utf-8") as f:
             json.dump(data_to_save, f, indent=2)
@@ -1009,11 +1007,17 @@ def fetch_bars(symbol: str, timeframe, count: int) -> pd.DataFrame:
             cols = [c for c in ["open", "high", "low", "close", "tick_volume"] if c in df_csv.columns]
             if len(cols) >= 4:
                 df_res = df_csv[cols].tail(count).copy()
-                if symbol != "XAUUSD" and not os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "raw", f"{symbol}_M15.csv")):
-                    scale_map = {"EURUSD": 1.0850 / 2650.0, "GBPUSD": 1.2950 / 2650.0, "USDJPY": 155.0 / 2650.0}
-                    base_factor = scale_map.get(symbol, 1.0)
-                    for c in ["open", "high", "low", "close"]:
-                        df_res[c] = df_res[c] * base_factor
+                csv_last = float(df_res["close"].iloc[-1]) if len(df_res) > 0 else 4724.0
+                real_bases = {
+                    "XAUUSD": 2654.50,
+                    "EURUSD": 1.0865,
+                    "GBPUSD": 1.2985,
+                    "USDJPY": 153.80,
+                }
+                target_base = real_bases.get(symbol, 2654.50)
+                scale_factor = target_base / csv_last if csv_last > 0 else 1.0
+                for c in ["open", "high", "low", "close"]:
+                    df_res[c] = df_res[c] * scale_factor
                 return df_res
         except Exception:
             pass

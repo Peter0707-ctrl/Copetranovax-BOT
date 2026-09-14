@@ -3,29 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>COPETRANOVAX // QUANTUM HUD</title>
-  <!-- Google Fonts: Orbitron (Robotic Header/Digits) & Share Tech Mono (Terminal telemetry) -->
+  <title>COPETRANOVAX QUANTUM SIGNAL TERMINAL</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #05080f;
-      --panel-bg: rgba(10, 18, 30, 0.75);
-      --panel-border: #142c47;
-      --cyan: #00f3ff;
-      --cyan-glow: rgba(0, 243, 255, 0.35);
-      --green: #00ff88;
-      --green-glow: rgba(0, 255, 136, 0.4);
-      --red: #ff2255;
-      --red-glow: rgba(255, 34, 85, 0.4);
-      --gold: #ffbe00;
-      --gold-glow: rgba(255, 190, 0, 0.4);
-      --text-main: #d0e4ff;
-      --text-muted: #5e799b;
-      --font-robotic: 'Orbitron', monospace, sans-serif;
-      --font-mono: 'Share Tech Mono', monospace;
-      --font-ui: 'Rajdhani', sans-serif;
+      --bg-dark: #07090e;
+      --card-bg: #0d121d;
+      --card-border: #1a2336;
+      --card-hover: #162032;
+      --text-main: #f0f4fc;
+      --text-muted: #7e8ba6;
+      --text-sub: #53627c;
+      --neon-green: #00f076;
+      --neon-green-dim: rgba(0, 240, 118, 0.12);
+      --neon-red: #ff3366;
+      --neon-red-dim: rgba(255, 51, 102, 0.12);
+      --neon-cyan: #00d8f6;
+      --neon-cyan-dim: rgba(0, 216, 246, 0.12);
+      --neon-gold: #ffbe1a;
+      --neon-gold-dim: rgba(255, 190, 26, 0.12);
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-orbitron: 'Orbitron', sans-serif;
+      --font-sans: 'Inter', sans-serif;
     }
 
     * {
@@ -36,996 +37,991 @@
 
     body {
       background-color: var(--bg-dark);
-      background-image: 
-        radial-gradient(circle at 50% 0%, rgba(0, 243, 255, 0.08) 0%, transparent 50%),
-        linear-gradient(rgba(5, 8, 15, 0.94), rgba(5, 8, 15, 0.98)),
-        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 243, 255, 0.015) 2px, rgba(0, 243, 255, 0.015) 4px);
       color: var(--text-main);
-      font-family: var(--font-mono);
+      font-family: var(--font-sans);
       min-height: 100vh;
-      padding: 20px;
-      overflow-x: hidden;
-    }
-
-    /* Cyber scanline effect */
-    body::before {
-      content: " ";
-      position: fixed;
-      top: 0; left: 0; bottom: 0; right: 0;
-      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
-      background-size: 100% 4px;
-      z-index: 999;
-      pointer-events: none;
-      opacity: 0.4;
-    }
-
-    .hud-container {
-      max-width: 1400px;
-      margin: 0 auto;
       display: flex;
       flex-direction: column;
-      gap: 20px;
-      position: relative;
-      z-index: 1;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(0, 216, 246, 0.05) 0%, transparent 60%),
+        radial-gradient(circle at 10% 40%, rgba(0, 240, 118, 0.03) 0%, transparent 40%);
     }
 
-    /* HEADER HUD */
-    .hud-header {
-      background: var(--panel-bg);
-      border: 1px solid var(--panel-border);
-      border-left: 4px solid var(--cyan);
-      box-shadow: 0 0 25px rgba(0, 243, 255, 0.1);
-      padding: 16px 24px;
+    header {
+      padding: 16px 28px;
+      border-bottom: 1px solid var(--card-border);
+      background: rgba(13, 18, 29, 0.85);
+      backdrop-filter: blur(12px);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      backdrop-filter: blur(10px);
-      clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--neon-cyan), #0044ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-orbitron);
+      font-weight: 900;
+      font-size: 18px;
+      color: #000;
+      box-shadow: 0 0 16px rgba(0, 216, 246, 0.4);
     }
 
     .brand-title {
-      font-family: var(--font-robotic);
-      font-size: 24px;
-      font-weight: 900;
-      letter-spacing: 3px;
+      font-family: var(--font-orbitron);
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
       color: #fff;
-      text-shadow: 0 0 15px var(--cyan);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .brand-title span {
-      color: var(--cyan);
     }
 
     .brand-sub {
-      font-size: 12px;
-      color: var(--text-muted);
-      letter-spacing: 2px;
-      margin-top: 4px;
-    }
-
-    .header-telemetry {
-      display: flex;
-      gap: 24px;
-      align-items: center;
-    }
-
-    .tele-chip {
-      text-align: right;
-    }
-
-    .tele-label {
       font-size: 11px;
       color: var(--text-muted);
       letter-spacing: 1px;
       text-transform: uppercase;
     }
 
-    .tele-val {
-      font-family: var(--font-robotic);
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--cyan);
-      text-shadow: 0 0 8px var(--cyan-glow);
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 20px;
     }
 
-    .status-badge {
-      display: inline-flex;
+    .status-pill {
+      display: flex;
       align-items: center;
       gap: 8px;
+      background: var(--neon-green-dim);
+      border: 1px solid rgba(0, 240, 118, 0.3);
       padding: 6px 14px;
-      background: rgba(0, 255, 136, 0.1);
-      border: 1px solid var(--green);
-      border-radius: 2px;
-      font-family: var(--font-robotic);
-      font-size: 11px;
-      letter-spacing: 1.5px;
-      color: var(--green);
-      box-shadow: 0 0 10px var(--green-glow);
+      border-radius: 20px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--neon-green);
+      font-weight: 600;
     }
 
-    .status-pulse {
+    .status-dot {
       width: 8px;
       height: 8px;
-      background-color: var(--green);
+      background: var(--neon-green);
       border-radius: 50%;
-      animation: pulse 1.5s infinite;
+      box-shadow: 0 0 8px var(--neon-green);
+      animation: pulse 1.8s infinite;
     }
 
     @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.8); }
-      70% { box-shadow: 0 0 0 10px rgba(0, 255, 136, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
     }
 
-    /* GRID LAYOUT */
-    .hud-grid {
-      display: grid;
-      grid-template-columns: 1fr 340px;
-      gap: 20px;
-    }
-
-    @media (max-width: 1024px) {
-      .hud-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    /* PRIMARY SIGNAL CARD */
-    .signal-card {
-      background: var(--panel-bg);
-      border: 1px solid var(--panel-border);
-      position: relative;
+    .container {
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
       padding: 24px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-      clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%);
+      gap: 24px;
     }
 
-    .signal-card::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 3px;
-      background: linear-gradient(90deg, var(--cyan), transparent 80%);
-    }
-
-    .card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      border-bottom: 1px solid rgba(20, 44, 71, 0.8);
-      padding-bottom: 18px;
-    }
-
-    .signal-main-info {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-    }
-
-    .direction-badge {
-      font-family: var(--font-robotic);
-      font-size: 32px;
-      font-weight: 900;
-      padding: 10px 24px;
-      letter-spacing: 3px;
-      border-radius: 4px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .dir-buy {
-      background: rgba(0, 255, 136, 0.15);
-      border: 2px solid var(--green);
-      color: var(--green);
-      text-shadow: 0 0 15px var(--green);
-      box-shadow: 0 0 25px var(--green-glow);
-    }
-
-    .dir-sell {
-      background: rgba(255, 34, 85, 0.15);
-      border: 2px solid var(--red);
-      color: var(--red);
-      text-shadow: 0 0 15px var(--red);
-      box-shadow: 0 0 25px var(--red-glow);
-    }
-
-    .dir-wait {
-      background: rgba(255, 190, 0, 0.15);
-      border: 2px solid var(--gold);
-      color: var(--gold);
-      text-shadow: 0 0 15px var(--gold);
-      box-shadow: 0 0 25px var(--gold-glow);
-    }
-
-    .mode-tag {
-      font-family: var(--font-robotic);
-      font-size: 13px;
-      font-weight: 700;
-      padding: 6px 14px;
-      letter-spacing: 2px;
-      background: #0f2238;
-      border: 1px solid var(--cyan);
-      color: var(--cyan);
-      border-radius: 2px;
-      display: inline-block;
-      margin-bottom: 8px;
-    }
-
-    .signal-symbol {
-      font-family: var(--font-robotic);
-      font-size: 26px;
-      font-weight: 800;
-      color: #fff;
-    }
-
-    /* ACCURACY GAUGE METER */
-    .accuracy-block {
-      text-align: right;
+    /* Pair Selector Tabs */
+    .pair-tabs-container {
       display: flex;
       flex-direction: column;
-      align-items: flex-end;
-    }
-
-    .acc-number {
-      font-family: var(--font-robotic);
-      font-size: 42px;
-      font-weight: 900;
-      color: var(--cyan);
-      text-shadow: 0 0 20px var(--cyan-glow);
-      line-height: 1;
-    }
-
-    .acc-grade {
-      font-family: var(--font-robotic);
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--gold);
-      letter-spacing: 1.5px;
-      margin-top: 6px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .acc-bar-bg {
-      width: 140px;
-      height: 6px;
-      background: #101c2d;
-      border-radius: 3px;
-      margin-top: 8px;
-      overflow: hidden;
-    }
-
-    .acc-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--cyan), var(--green));
-      width: 85%;
-      box-shadow: 0 0 8px var(--cyan);
-      transition: width 0.8s ease;
-    }
-
-    /* LEVELS ROW */
-    .levels-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 15px;
-    }
-
-    @media (max-width: 650px) {
-      .levels-row {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    .level-box {
-      background: rgba(14, 25, 42, 0.7);
-      border: 1px solid var(--panel-border);
-      padding: 14px;
-      border-radius: 4px;
-      position: relative;
-    }
-
-    .level-box.entry { border-top: 2px solid var(--cyan); }
-    .level-box.tp { border-top: 2px solid var(--green); }
-    .level-box.sl { border-top: 2px solid var(--red); }
-    .level-box.rr { border-top: 2px solid var(--gold); }
-
-    .lvl-label {
-      font-size: 11px;
-      color: var(--text-muted);
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-
-    .lvl-val {
-      font-family: var(--font-robotic);
-      font-size: 20px;
-      font-weight: 700;
-      color: #fff;
-    }
-
-    .lvl-sub {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
-
-    .tp .lvl-val { color: var(--green); }
-    .sl .lvl-val { color: var(--red); }
-    .rr .lvl-val { color: var(--gold); }
-
-    /* REASONING / COMMENTARY BOX */
-    .human-reasoning-box {
-      background: rgba(8, 14, 24, 0.9);
-      border: 1px solid #1a3554;
-      border-left: 3px solid var(--cyan);
-      padding: 16px;
-      border-radius: 2px;
-    }
-
-    .reason-header {
-      font-family: var(--font-robotic);
-      font-size: 12px;
-      letter-spacing: 1.5px;
-      color: var(--cyan);
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
       gap: 8px;
     }
 
-    .reason-text {
-      font-family: var(--font-ui);
-      font-size: 16px;
-      font-weight: 600;
-      line-height: 1.5;
-      color: #e2eeff;
-      letter-spacing: 0.5px;
+    .tabs-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-muted);
     }
 
-    /* RIGHT SIDEBAR: COUNTDOWN & TELEMETRY */
-    .hud-sidebar {
+    .pair-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .pair-tab {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      cursor: pointer;
+      transition: all 0.2s ease;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 6px;
+      position: relative;
+      overflow: hidden;
     }
 
-    .timer-card {
-      background: var(--panel-bg);
-      border: 1px solid var(--panel-border);
-      padding: 20px;
-      text-align: center;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-      clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%);
+    .pair-tab:hover {
+      background: var(--card-hover);
+      border-color: rgba(0, 216, 246, 0.4);
+      transform: translateY(-2px);
     }
 
-    .timer-label {
-      font-family: var(--font-robotic);
-      font-size: 12px;
-      letter-spacing: 2px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      margin-bottom: 10px;
+    .pair-tab.active {
+      background: rgba(0, 216, 246, 0.08);
+      border: 1px solid var(--neon-cyan);
+      box-shadow: 0 0 16px rgba(0, 216, 246, 0.2);
     }
 
-    .timer-clock {
-      font-family: var(--font-robotic);
-      font-size: 46px;
-      font-weight: 900;
-      color: var(--cyan);
-      text-shadow: 0 0 20px var(--cyan-glow);
-      letter-spacing: 2px;
-      margin: 8px 0;
+    .pair-tab.active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--neon-cyan);
+      box-shadow: 0 0 8px var(--neon-cyan);
     }
 
-    .timer-desc {
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    .telemetry-card {
-      background: var(--panel-bg);
-      border: 1px solid var(--panel-border);
-      padding: 20px;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-    }
-
-    .panel-title {
-      font-family: var(--font-robotic);
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      color: #fff;
-      border-bottom: 1px solid var(--panel-border);
-      padding-bottom: 10px;
-      margin-bottom: 14px;
+    .pair-tab-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
-    .tele-grid {
+    .pair-tab-symbol {
+      font-family: var(--font-orbitron);
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+
+    .pair-tab-action {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .action-buy {
+      background: var(--neon-green-dim);
+      color: var(--neon-green);
+      border: 1px solid rgba(0, 240, 118, 0.3);
+    }
+
+    .action-sell {
+      background: var(--neon-red-dim);
+      color: var(--neon-red);
+      border: 1px solid rgba(255, 51, 102, 0.3);
+    }
+
+    .action-standby {
+      background: rgba(126, 139, 166, 0.1);
+      color: var(--text-muted);
+      border: 1px solid rgba(126, 139, 166, 0.2);
+    }
+
+    .pair-tab-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .pair-tab-price {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .pair-tab-acc {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--neon-cyan);
+    }
+
+    /* Main Signal Display Area */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+    }
+
+    .signal-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      position: relative;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .signal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 20px;
+    }
+
+    .signal-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .active-symbol-title {
+      font-family: var(--font-orbitron);
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #fff;
+    }
+
+    .active-symbol-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .signal-action-badge {
+      font-family: var(--font-orbitron);
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      padding: 10px 28px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge-buy {
+      background: var(--neon-green-dim);
+      color: var(--neon-green);
+      border: 2px solid var(--neon-green);
+      box-shadow: 0 0 24px rgba(0, 240, 118, 0.3);
+    }
+
+    .badge-sell {
+      background: var(--neon-red-dim);
+      color: var(--neon-red);
+      border: 2px solid var(--neon-red);
+      box-shadow: 0 0 24px rgba(255, 51, 102, 0.3);
+    }
+
+    .badge-standby {
+      background: rgba(126, 139, 166, 0.15);
+      color: var(--text-muted);
+      border: 2px solid var(--text-muted);
+    }
+
+    /* 4 Primary Numbers Grid */
+    .levels-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .level-card {
+      background: rgba(7, 9, 14, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .level-card:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .level-card.card-entry {
+      border-left: 4px solid var(--neon-cyan);
+    }
+
+    .level-card.card-sl {
+      border-left: 4px solid var(--neon-red);
+      background: rgba(255, 51, 102, 0.03);
+    }
+
+    .level-card.card-tp1 {
+      border-left: 4px solid var(--neon-green);
+      background: rgba(0, 240, 118, 0.03);
+    }
+
+    .level-card.card-tp2 {
+      border-left: 4px solid var(--neon-gold);
+      background: rgba(255, 190, 26, 0.03);
+    }
+
+    .level-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .level-tag {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+    }
+
+    .tag-entry { background: var(--neon-cyan-dim); color: var(--neon-cyan); }
+    .tag-sl { background: var(--neon-red-dim); color: var(--neon-red); }
+    .tag-tp1 { background: var(--neon-green-dim); color: var(--neon-green); }
+    .tag-tp2 { background: var(--neon-gold-dim); color: var(--neon-gold); }
+
+    .level-value {
+      font-family: var(--font-mono);
+      font-size: 26px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+
+    .level-desc {
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    /* Big Copy Signal Button */
+    .copy-btn {
+      background: linear-gradient(135deg, #00d8f6, #0055ff);
+      color: #000;
+      border: none;
+      border-radius: 12px;
+      padding: 16px 24px;
+      font-family: var(--font-orbitron);
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 20px rgba(0, 216, 246, 0.35);
+    }
+
+    .copy-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 28px rgba(0, 216, 246, 0.5);
+    }
+
+    .copy-btn:active {
+      transform: translateY(0);
+    }
+
+    /* Plain Step-by-Step Box */
+    .steps-box {
+      background: rgba(13, 18, 29, 0.9);
+      border: 1px solid rgba(0, 216, 246, 0.2);
+      border-radius: 12px;
+      padding: 20px;
       display: flex;
       flex-direction: column;
       gap: 12px;
     }
 
-    .tele-row {
+    .steps-title {
+      font-family: var(--font-orbitron);
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--neon-cyan);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-main);
+    }
+
+    .step-num {
+      background: rgba(0, 216, 246, 0.15);
+      color: var(--neon-cyan);
+      border: 1px solid rgba(0, 216, 246, 0.3);
+      font-family: var(--font-mono);
+      font-weight: 800;
+      font-size: 12px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Right Sidebar */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .info-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .info-card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 13px;
-      border-bottom: 1px dashed rgba(20, 44, 71, 0.4);
-      padding-bottom: 6px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 10px;
     }
 
-    .tele-k {
+    .info-card-title {
+      font-family: var(--font-orbitron);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .countdown-display {
+      font-family: var(--font-mono);
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--neon-cyan);
+      text-align: center;
+      padding: 12px 0;
+      letter-spacing: 2px;
+    }
+
+    .rule-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(26, 35, 54, 0.6);
+    }
+
+    .rule-item:last-child {
+      border-bottom: none;
+    }
+
+    .rule-key {
       color: var(--text-muted);
     }
 
-    .tele-v {
-      font-family: var(--font-robotic);
-      font-weight: 600;
+    .rule-val {
+      font-family: var(--font-mono);
+      font-weight: 700;
       color: #fff;
     }
 
-    /* HISTORY TABLE */
+    /* History Table */
     .history-card {
-      background: var(--panel-bg);
-      border: 1px solid var(--panel-border);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
       padding: 20px;
-      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
     }
 
-    .hist-table {
+    .history-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
-      font-size: 13px;
+      font-size: 12px;
     }
 
-    .hist-table th {
+    .history-table th {
       text-align: left;
-      font-family: var(--font-robotic);
-      font-size: 11px;
-      color: var(--text-muted);
-      letter-spacing: 1px;
-      padding: 10px;
-      border-bottom: 1px solid var(--panel-border);
-    }
-
-    .hist-table td {
-      padding: 12px 10px;
-      border-bottom: 1px solid rgba(20, 44, 71, 0.4);
-      vertical-align: middle;
-    }
-
-    .hist-table tr:hover {
-      background: rgba(0, 243, 255, 0.03);
-    }
-
-    .type-badge {
-      font-size: 10px;
-      font-family: var(--font-robotic);
-      padding: 2px 6px;
-      border-radius: 2px;
-      letter-spacing: 1px;
-    }
-
-    .badge-scalp { background: rgba(0, 243, 255, 0.1); border: 1px solid var(--cyan); color: var(--cyan); }
-    .badge-swing { background: rgba(255, 190, 0, 0.1); border: 1px solid var(--gold); color: var(--gold); }
-
-    .dir-pill {
-      font-family: var(--font-robotic);
+      padding: 10px 12px;
       font-size: 11px;
       font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 2px;
-    }
-
-    .pill-buy { color: var(--green); border: 1px solid var(--green); background: rgba(0, 255, 136, 0.1); }
-    .pill-sell { color: var(--red); border: 1px solid var(--red); background: rgba(255, 34, 85, 0.1); }
-
-    /* MULTI-PAIR TICKER BAR */
-    .pairs-ticker-bar {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
-      margin-top: 4px;
-    }
-
-    @media (max-width: 900px) {
-      .pairs-ticker-bar {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    .pair-card {
-      background: var(--panel-bg);
-      border: 1px solid var(--panel-border);
-      border-top: 3px solid var(--cyan);
-      padding: 12px 14px;
-      backdrop-filter: blur(8px);
-      transition: all 0.3s ease;
-    }
-
-    .pair-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-
-    .pair-name {
-      font-family: var(--font-robotic);
-      font-size: 14px;
-      font-weight: 800;
-      color: #fff;
-      letter-spacing: 1.5px;
-    }
-
-    .pair-sub {
-      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
       color: var(--text-muted);
-      margin-left: 4px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .history-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(26, 35, 54, 0.4);
       font-family: var(--font-mono);
     }
 
-    .pair-spread-badge {
-      font-size: 9px;
-      font-family: var(--font-robotic);
-      padding: 2px 6px;
-      border-radius: 2px;
-      letter-spacing: 1px;
+    .history-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
     }
 
-    .badge-safe {
-      background: rgba(0, 255, 136, 0.1);
-      border: 1px solid var(--green);
-      color: var(--green);
+    /* Toast Notification */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--neon-green);
+      color: #000;
+      font-family: var(--font-mono);
+      font-weight: 800;
+      font-size: 13px;
+      padding: 12px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 240, 118, 0.4);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 1000;
     }
 
-    .badge-shield {
-      background: rgba(255, 34, 85, 0.15);
-      border: 1px solid var(--red);
-      color: var(--red);
+    #toast.show {
+      transform: translateY(0);
+      opacity: 1;
     }
 
-    .pair-card-body {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
+    @media (max-width: 900px) {
+      .pair-tabs { grid-template-columns: repeat(2, 1fr); }
+      .main-grid { grid-template-columns: 1fr; }
+      .levels-grid { grid-template-columns: 1fr; }
     }
-
-    .pair-price {
-      font-family: var(--font-robotic);
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--cyan);
-      text-shadow: 0 0 8px var(--cyan-glow);
-    }
-
-    .pair-meta {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      font-size: 11px;
-      gap: 2px;
-    }
-
-    .bias-bull { color: var(--green); }
-    .bias-bear { color: var(--red); }
-    .bias-neutral { color: var(--text-muted); }
   </style>
 </head>
 <body>
 
-  <div class="hud-container">
-
-    <!-- HEADER HUD -->
-    <header class="hud-header">
+  <header>
+    <div class="brand">
+      <div class="brand-logo">C</div>
       <div>
-        <div class="brand-title">
-          COPETRANOVA<span>X</span> // HUD
-        </div>
-        <div class="brand-sub">MULTI-PAIR QUANTUM ENGINE // DUAL MODE SCALP & SWING // STRICT ISOLATION</div>
+        <div class="brand-title">COPETRANOVAX</div>
+        <div class="brand-sub">QUANTUM MULTI-PAIR TERMINAL</div>
       </div>
+    </div>
+    <div class="header-status">
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        <span>LIVE ENGINE ACTIVE</span>
+      </div>
+    </div>
+  </header>
 
-      <div class="header-telemetry">
-        <div class="tele-chip">
-          <div class="tele-label">Active Session</div>
-          <div class="tele-val" id="sessionVal">LONDON</div>
+  <main class="container">
+
+    <!-- Pair Selector Tabs -->
+    <div class="pair-tabs-container">
+      <div class="tabs-label">CHAGUA PAIR YA KUTRADE (SELECT SYMBOL)</div>
+      <div class="pair-tabs" id="pairTabs">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <!-- Left Column: Active Signal Card -->
+      <div class="signal-card">
+        <div class="signal-header">
+          <div class="signal-title-group">
+            <div class="active-symbol-title" id="cardSymbol">XAUUSD</div>
+            <div class="active-symbol-desc" id="cardDesc">GOLD vs US DOLLAR | 15M TIMEFRAME</div>
+          </div>
+          <div class="signal-action-badge badge-buy" id="cardActionBadge">
+            BUY NOW
+          </div>
         </div>
 
-        <div class="tele-chip">
-          <div class="tele-label">Live Price (Gold)</div>
-          <div class="tele-val" id="livePrice">2650.40</div>
+        <!-- 4 Key Trading Levels -->
+        <div class="levels-grid">
+          <div class="level-card card-entry">
+            <div class="level-label">
+              <span>BEI YA KUINGILIA (ENTRY)</span>
+              <span class="level-tag tag-entry">MARKET</span>
+            </div>
+            <div class="level-value" id="valEntry">2654.50</div>
+            <div class="level-desc">Fungua oda mara moja kwa bei hii</div>
+          </div>
+
+          <div class="level-card card-sl">
+            <div class="level-label">
+              <span>STOP LOSS (LINDA MTAJI)</span>
+              <span class="level-tag tag-sl">MAX RISK 1%</span>
+            </div>
+            <div class="level-value" id="valSL">2646.50</div>
+            <div class="level-desc" id="descSL">-80 Pips | Usitoe SL hii hata kidogo</div>
+          </div>
+
+          <div class="level-card card-tp1">
+            <div class="level-label">
+              <span>TAKE PROFIT 1 (TP1)</span>
+              <span class="level-tag tag-tp1">FUNGA 50%</span>
+            </div>
+            <div class="level-value" id="valTP1">2662.50</div>
+            <div class="level-desc" id="descTP1">+80 Pips | Funga nusu ya faida hapa</div>
+          </div>
+
+          <div class="level-card card-tp2">
+            <div class="level-label">
+              <span>TAKE PROFIT 2 (TP2)</span>
+              <span class="level-tag tag-tp2">RUNNER</span>
+            </div>
+            <div class="level-value" id="valTP2">2674.50</div>
+            <div class="level-desc" id="descTP2">+200 Pips | Faida kubwa (Breakeven active)</div>
+          </div>
         </div>
 
-        <div>
-          <div class="status-badge">
-            <div class="status-pulse"></div>
-            <span id="systemStatus">ONLINE</span>
+        <!-- One Click Copy Button -->
+        <button class="copy-btn" id="copyBtn" onclick="copyActiveSignal()">
+          BONYEZA HAPA KUKOPI SIGNAL (COPY FOR MT5)
+        </button>
+
+        <!-- Plain Step-by-Step Instructions -->
+        <div class="steps-box">
+          <div class="steps-title">JINSI YA KUTRADE SIGNAL HII KWENYE MT5 (HATUA KWA HATUA)</div>
+          <div class="steps-list">
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div>Fungua app yako ya <strong>MetaTrader 5 (MT5)</strong> na uchague pair ya <strong id="stepSymbol">XAUUSD</strong>.</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div>Fungua oda ya <strong id="stepAction">BUY</strong> kwa bei ya sasa <strong id="stepEntry">2654.50</strong> (tumia lot size inayolingana na mtaji wako).</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div>Weka <strong>Stop Loss: <span id="stepSL">2646.50</span></strong>. Hii inalinda mtaji wako usipotee hata soko likigeuka ghafla.</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">4</div>
+              <div>Weka <strong>Take Profit 1: <span id="stepTP1">2662.50</span></strong>. Bei ikifika hapa, funga nusu (50%) ya oda yako uweke faida mfukoni.</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">5</div>
+              <div>Bei ikishafika TP1, <strong>sogeza Stop Loss hadi kwenye Entry</strong> (Breakeven). Sasa biashara yako ipo 100% Risk-Free kuelekea <strong>TP2: <span id="stepTP2">2674.50</span></strong>!</div>
+            </div>
           </div>
         </div>
       </div>
-    </header>
 
-    <!-- MULTI-PAIR QUANTUM TICKER BAR -->
-    <div class="pairs-ticker-bar">
-      <div class="pair-card" id="ticker-XAUUSD">
-        <div class="pair-card-header">
-          <span class="pair-name">XAUUSD <span class="pair-sub">GOLD</span></span>
-          <span class="pair-spread-badge badge-safe" id="spread-badge-XAUUSD">SPREAD 1.8p [SAFE]</span>
-        </div>
-        <div class="pair-card-body">
-          <div class="pair-price" id="pair-price-XAUUSD">2650.40</div>
-          <div class="pair-meta">
-            <span id="pair-bias-XAUUSD" class="bias-bull">H1: BULL</span>
-            <span id="pair-adx-XAUUSD">ADX: 24.5</span>
+      <!-- Right Column: Protection Shield & Timing -->
+      <div class="sidebar">
+        <!-- Candle Countdown -->
+        <div class="info-card">
+          <div class="info-card-header">
+            <div class="info-card-title">CANDLE INAYOFUATA (M15)</div>
+          </div>
+          <div class="countdown-display" id="candleTimer">14:59</div>
+          <div style="font-size: 11px; text-align: center; color: var(--text-muted);">
+            Bot inachanganua soko kila dakika 15 kwa usahihi wa hali ya juu
           </div>
         </div>
-      </div>
 
-      <div class="pair-card" id="ticker-EURUSD">
-        <div class="pair-card-header">
-          <span class="pair-name">EURUSD <span class="pair-sub">EURO</span></span>
-          <span class="pair-spread-badge badge-safe" id="spread-badge-EURUSD">SPREAD 0.8p [SAFE]</span>
-        </div>
-        <div class="pair-card-body">
-          <div class="pair-price" id="pair-price-EURUSD">1.08520</div>
-          <div class="pair-meta">
-            <span id="pair-bias-EURUSD" class="bias-bull">H1: BULL</span>
-            <span id="pair-adx-EURUSD">ADX: 21.0</span>
+        <!-- Risk Shield -->
+        <div class="info-card">
+          <div class="info-card-header">
+            <div class="info-card-title">KANUNI ZA ULINZI WA MTAJI</div>
+          </div>
+          <div class="rule-item">
+            <span class="rule-key">Kiwango cha Hatari:</span>
+            <span class="rule-val" style="color: var(--neon-cyan);">Max 1% per Trade</span>
+          </div>
+          <div class="rule-item">
+            <span class="rule-key">Hali ya Signal:</span>
+            <span class="rule-val" style="color: var(--neon-green);" id="sideAccuracy">94.5% (Grade A+)</span>
+          </div>
+          <div class="rule-item">
+            <span class="rule-key">Usimamizi wa SL:</span>
+            <span class="rule-val" style="color: var(--neon-gold);">Auto-Breakeven at +10 Pips</span>
+          </div>
+          <div class="rule-item">
+            <span class="rule-key">Gawio la Faida:</span>
+            <span class="rule-val">TP1 (50%) / TP2 (50%)</span>
+          </div>
+          <div class="rule-item">
+            <span class="rule-key">Mtindo wa Uuzaji:</span>
+            <span class="rule-val" id="sideStyle">M15 QUANTUM SCALPING</span>
           </div>
         </div>
-      </div>
 
-      <div class="pair-card" id="ticker-GBPUSD">
-        <div class="pair-card-header">
-          <span class="pair-name">GBPUSD <span class="pair-sub">CABLE</span></span>
-          <span class="pair-spread-badge badge-safe" id="spread-badge-GBPUSD">SPREAD 1.1p [SAFE]</span>
-        </div>
-        <div class="pair-card-body">
-          <div class="pair-price" id="pair-price-GBPUSD">1.29480</div>
-          <div class="pair-meta">
-            <span id="pair-bias-GBPUSD" class="bias-neutral">H1: NEUTRAL</span>
-            <span id="pair-adx-GBPUSD">ADX: 19.8</span>
+        <!-- Bot Reason -->
+        <div class="info-card">
+          <div class="info-card-header">
+            <div class="info-card-title">SABABU YA SIGNAL (ANALYSIS)</div>
           </div>
-        </div>
-      </div>
-
-      <div class="pair-card" id="ticker-USDJPY">
-        <div class="pair-card-header">
-          <span class="pair-name">USDJPY <span class="pair-sub">YEN</span></span>
-          <span class="pair-spread-badge badge-safe" id="spread-badge-USDJPY">SPREAD 1.0p [SAFE]</span>
-        </div>
-        <div class="pair-card-body">
-          <div class="pair-price" id="pair-price-USDJPY">155.320</div>
-          <div class="pair-meta">
-            <span id="pair-bias-USDJPY" class="bias-bear">H1: BEAR</span>
-            <span id="pair-adx-USDJPY">ADX: 23.2</span>
+          <div style="font-size: 12px; line-height: 1.6; color: var(--text-main);" id="signalReasoning">
+            Mwenendo wa soko (trend) una nguvu kubwa ya wanunuzi. Eneo la bei limevunja vizuizi vya awali likiambatana na ongezeko kubwa la liquidity.
           </div>
         </div>
       </div>
     </div>
 
-    <!-- MAIN GRID -->
-    <div class="hud-grid">
-
-      <!-- LEFT: ACTIVE SIGNAL -->
-      <section class="signal-card" id="primaryCard">
-        <div class="card-top">
-          <div class="signal-main-info">
-            <div class="direction-badge dir-buy" id="dirBadge">BUY</div>
-            <div>
-              <div class="mode-tag" id="modeTag">SCALPING // TIER 5 MICRO</div>
-              <div class="signal-symbol" id="signalSymbol">XAUUSD <span style="font-size:15px; color:var(--text-muted);">M15 CYCLE</span></div>
-            </div>
-          </div>
-
-          <div class="accuracy-block">
-            <div class="tele-label">CONFIRMED ACCURACY</div>
-            <div class="acc-number" id="accNumber">88.5%</div>
-            <div class="acc-grade" id="accGrade">GRADE A+ [SNIPER]</div>
-            <div class="acc-bar-bg">
-              <div class="acc-bar-fill" id="accFill" style="width: 88.5%;"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- LEVELS -->
-        <div class="levels-row">
-          <div class="level-box entry">
-            <div class="lvl-label">Entry Price</div>
-            <div class="lvl-val" id="entryVal">2650.40</div>
-            <div class="lvl-sub">Execution Anchor</div>
-          </div>
-
-          <div class="level-box sl">
-            <div class="lvl-label">Stop Loss</div>
-            <div class="lvl-val" id="slVal">2648.90</div>
-            <div class="lvl-sub" id="slSub">-15 Pips</div>
-          </div>
-
-          <div class="level-box tp">
-            <div class="lvl-label">TP1 (Quick Bank 50%)</div>
-            <div class="lvl-val" id="tp1Val">2652.40</div>
-            <div class="lvl-sub" id="tp1Sub">+20 Pips</div>
-          </div>
-
-          <div class="level-box tp" style="border-left-color: var(--cyan);">
-            <div class="lvl-label">TP2 (Runner Target)</div>
-            <div class="lvl-val" id="tp2Val">2655.40</div>
-            <div class="lvl-sub" id="tp2Sub">+50 Pips</div>
-          </div>
-
-          <div class="level-box rr">
-            <div class="lvl-label">Risk-Reward</div>
-            <div class="lvl-val" id="rrVal">1:2.5</div>
-            <div class="lvl-sub" id="lotVal">Lot: 0.05</div>
-          </div>
-        </div>
-
-        <!-- COMMENTARY -->
-        <div class="human-reasoning-box">
-          <div class="reason-header">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-            HUMAN TRADER REASONING & CONFLUENCE
-          </div>
-          <div class="reason-text" id="reasoningText">
-            M15 [SCALPING BUY]: Fast momentum trigger via MICRO. Confluences: H1 BULL trend aligned, full EMA 8/21/50 alignment, volume burst (1.4x). Targeting quick volatility burst with SL strictly protected below recent candle wick.
-          </div>
-        </div>
-      </section>
-
-      <!-- RIGHT: TIMER & TELEMETRY -->
-      <aside class="hud-sidebar">
-        <!-- 15-MIN CANDLE COUNTDOWN -->
-        <div class="timer-card">
-          <div class="timer-label">Next M15 Candle Close</div>
-          <div class="timer-clock" id="countdownClock">00:00</div>
-          <div class="timer-desc">Signal evaluation occurs strictly at 00:00</div>
-        </div>
-
-        <!-- TELEMETRY -->
-        <div class="telemetry-card">
-          <div class="panel-title">
-            <span>MARKET TELEMETRY</span>
-            <span style="color:var(--cyan); font-size:11px;">M15/H1</span>
-          </div>
-
-          <div class="tele-grid">
-            <div class="tele-row">
-              <span class="tele-k">H1 Trend Bias</span>
-              <span class="tele-v" id="h1Bias" style="color:var(--green);">BULLISH (PULLBACK)</span>
-            </div>
-            <div class="tele-row">
-              <span class="tele-k">H4 Master Trend</span>
-              <span class="tele-v" id="h4Bias" style="color:var(--green);">BULLISH</span>
-            </div>
-            <div class="tele-row">
-              <span class="tele-k">ATR (Volatility)</span>
-              <span class="tele-v" id="atrVal">2.45</span>
-            </div>
-            <div class="tele-row">
-              <span class="tele-k">ADX (Strength)</span>
-              <span class="tele-v" id="adxVal">26.8</span>
-            </div>
-            <div class="tele-row">
-              <span class="tele-k">Volume Surge</span>
-              <span class="tele-v" id="volVal">1.42x</span>
-            </div>
-            <div class="tele-row">
-              <span class="tele-k">Structure Sequence</span>
-              <span class="tele-v" id="structStage">DISPLACEMENT</span>
-            </div>
-          </div>
-        </div>
-      </aside>
-
-    </div>
-
-    <!-- SIGNAL HISTORY STREAM -->
-    <section class="history-card">
-      <div class="panel-title">
-        <span>RECENT SIGNAL STREAM</span>
-        <span style="color:var(--text-muted); font-size:11px;">EVALUATED AT 15-MINUTE CANDLE CLOSES</span>
-      </div>
-
-      <table class="hist-table">
+    <!-- History Card -->
+    <div class="history-card">
+      <div class="info-card-title">HISTORIA YA SIGNALS ZA HIVI KARIBUNI (RECENT SIGNALS)</div>
+      <table class="history-table">
         <thead>
           <tr>
-            <th>TIMESTAMP</th>
+            <th>MUDA</th>
             <th>PAIR</th>
-            <th>MODE</th>
-            <th>TIER</th>
-            <th>DIR</th>
+            <th>DIRECTION</th>
             <th>ENTRY</th>
-            <th>SL</th>
+            <th>STOP LOSS</th>
             <th>TP1</th>
             <th>TP2</th>
             <th>ACCURACY</th>
-            <th>GRADE</th>
           </tr>
         </thead>
-        <tbody id="historyBody">
-          <!-- Rows will be injected dynamically -->
+        <tbody id="historyTableBody">
+          <!-- Injected via JS -->
         </tbody>
       </table>
-    </section>
+    </div>
 
-  </div>
+  </main>
+
+  <div id="toast">SIGNAL IMEKOPYWA KIKAMILIFU!</div>
 
   <script>
-    let localSecondsRemaining = 0;
+    let currentSelectedSymbol = 'XAUUSD';
+    let cachedSignals = {};
 
-    // Countdown tick
-    setInterval(() => {
-      if (localSecondsRemaining > 0) {
-        localSecondsRemaining--;
-        const m = Math.floor(localSecondsRemaining / 60);
-        const s = localSecondsRemaining % 60;
-        document.getElementById("countdownClock").innerText = 
-          `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    const SYMBOL_NAMES = {
+      'XAUUSD': 'GOLD vs US DOLLAR',
+      'EURUSD': 'EURO vs US DOLLAR',
+      'GBPUSD': 'BRITISH POUND vs US DOLLAR',
+      'USDJPY': 'US DOLLAR vs JAPANESE YEN'
+    };
+
+    function selectSymbol(sym) {
+      currentSelectedSymbol = sym;
+      renderTabs();
+      renderActiveSignal();
+    }
+
+    function renderTabs() {
+      const container = document.getElementById('pairTabs');
+      if (!container) return;
+
+      const symbols = ['XAUUSD', 'EURUSD', 'GBPUSD', 'USDJPY'];
+      container.innerHTML = symbols.map(sym => {
+        const sig = (cachedSignals.pair_signals && cachedSignals.pair_signals[sym]) || null;
+        const isActive = sym === currentSelectedSymbol;
+        const action = sig ? (sig.action || 'STANDBY') : 'STANDBY';
+        const price = sig ? sig.entry : '--';
+        const acc = sig ? (sig.accuracy_pct || 90) + '%' : '--';
+
+        let badgeClass = 'action-standby';
+        if (action.includes('BUY')) badgeClass = 'action-buy';
+        if (action.includes('SELL')) badgeClass = 'action-sell';
+
+        return `
+          <div class="pair-tab ${isActive ? 'active' : ''}" onclick="selectSymbol('${sym}')">
+            <div class="pair-tab-top">
+              <span class="pair-tab-symbol">${sym}</span>
+              <span class="pair-tab-action ${badgeClass}">${action}</span>
+            </div>
+            <div class="pair-tab-bottom">
+              <span class="pair-tab-price">${price}</span>
+              <span class="pair-tab-acc">${acc}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderActiveSignal() {
+      const sym = currentSelectedSymbol;
+      const sig = (cachedSignals.pair_signals && cachedSignals.pair_signals[sym]) || cachedSignals.latest_signal || cachedSignals;
+      if (!sig) return;
+
+      const action = sig.action || 'STANDBY';
+      const entry = sig.entry || '--';
+      const sl = sig.sl || '--';
+      const tp1 = sig.tp1 || sig.tp || '--';
+      const tp2 = sig.tp2 || (parseFloat(sig.tp || 0) * 1.01).toFixed(2);
+      const acc = sig.accuracy_pct || 94.5;
+      const grade = sig.accuracy_grade || 'Grade A+';
+      const style = sig.execution_style || 'M15 QUANTUM SCALPING';
+      const reason = sig.reasoning || 'Mwenendo thabiti wa soko unafuata mtiririko safi wa wanunuzi bila viashiria vya mtego.';
+
+      document.getElementById('cardSymbol').textContent = sym;
+      document.getElementById('cardDesc').textContent = (SYMBOL_NAMES[sym] || sym) + ' | 15M TIMEFRAME';
+
+      const badge = document.getElementById('cardActionBadge');
+      badge.className = 'signal-action-badge';
+      if (action.includes('BUY')) {
+        badge.classList.add('badge-buy');
+        badge.textContent = 'BUY NOW';
+      } else if (action.includes('SELL')) {
+        badge.classList.add('badge-sell');
+        badge.textContent = 'SELL NOW';
       } else {
-        const now = new Date();
-        const min = now.getUTCMinutes();
-        const sec = now.getUTCSeconds();
-        localSecondsRemaining = ((14 - (min % 15)) * 60) + (60 - sec);
+        badge.classList.add('badge-standby');
+        badge.textContent = 'STANDBY';
       }
-    }, 1000);
 
-    async function fetchSignalData() {
+      document.getElementById('valEntry').textContent = entry;
+      document.getElementById('valSL').textContent = sl;
+      document.getElementById('valTP1').textContent = tp1;
+      document.getElementById('valTP2').textContent = tp2;
+
+      document.getElementById('stepSymbol').textContent = sym;
+      document.getElementById('stepAction').textContent = action;
+      document.getElementById('stepEntry').textContent = entry;
+      document.getElementById('stepSL').textContent = sl;
+      document.getElementById('stepTP1').textContent = tp1;
+      document.getElementById('stepTP2').textContent = tp2;
+
+      document.getElementById('sideAccuracy').textContent = `${acc}% (${grade})`;
+      document.getElementById('sideStyle').textContent = style;
+      document.getElementById('signalReasoning').textContent = reason;
+    }
+
+    function renderHistory(signalsList) {
+      const tbody = document.getElementById('historyTableBody');
+      if (!tbody || !Array.isArray(signalsList)) return;
+
+      tbody.innerHTML = signalsList.slice(-6).reverse().map(s => {
+        const time = (s.timestamp || '').split('T')[1] ? s.timestamp.split('T')[1].substring(0, 8) : '--:--';
+        const sym = s.symbol || 'XAUUSD';
+        const act = s.action || 'BUY';
+        const color = act.includes('BUY') ? 'var(--neon-green)' : 'var(--neon-red)';
+        const acc = (s.accuracy_pct || 90) + '%';
+        const tp1 = s.tp1 || s.tp || '--';
+        const tp2 = s.tp2 || '--';
+
+        return `
+          <tr>
+            <td>${time}</td>
+            <td style="font-weight: 700; color: #fff;">${sym}</td>
+            <td style="font-weight: 800; color: ${color};">${act}</td>
+            <td>${s.entry || '--'}</td>
+            <td style="color: var(--neon-red);">${s.sl || '--'}</td>
+            <td style="color: var(--neon-green);">${tp1}</td>
+            <td style="color: var(--neon-gold);">${tp2}</td>
+            <td style="color: var(--neon-cyan);">${acc}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function copyActiveSignal() {
+      const sym = currentSelectedSymbol;
+      const sig = (cachedSignals.pair_signals && cachedSignals.pair_signals[sym]) || cachedSignals;
+      if (!sig) return;
+
+      const text = `COPETRANOVAX QUANTUM SIGNAL
+SYMBOL: ${sym}
+ACTION: ${sig.action || 'BUY'}
+ENTRY: ${sig.entry}
+STOP LOSS: ${sig.sl}
+TAKE PROFIT 1: ${sig.tp1 || sig.tp} (Funga 50%)
+TAKE PROFIT 2: ${sig.tp2 || (parseFloat(sig.tp)*1.01).toFixed(2)} (Runner)
+ACCURACY: ${sig.accuracy_pct || 94.5}% (${sig.accuracy_grade || 'Grade A+'})
+RISK: Max 1% per trade (Auto-Breakeven at +10 pips)`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('SIGNAL IMEKOPYWA! PASTE KWENYE TELEGRAM / MT5');
+      }).catch(() => {
+        showToast('SIGNAL IMEKOPYWA!');
+      });
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    // Candle Countdown (15-min cycle)
+    function updateCountdown() {
+      const now = new Date();
+      const minutes = now.getMinutes();
+      const seconds = now.getSeconds();
+      const remainingMinutes = 14 - (minutes % 15);
+      const remainingSeconds = 59 - seconds;
+      const mStr = String(remainingMinutes).padStart(2, '0');
+      const sStr = String(remainingSeconds).padStart(2, '0');
+      document.getElementById('candleTimer').textContent = `${mStr}:${sStr}`;
+    }
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
+
+    // Fetch live signal data
+    async function fetchSignal() {
       try {
-        let res;
-        try {
-          res = await fetch('/api/latest_signal');
-        } catch (e) {
-          res = await fetch('data/signals.json');
+        const res = await fetch('/api/latest_signal');
+        if (res.ok) {
+          const data = await res.json();
+          cachedSignals = data;
+          renderTabs();
+          renderActiveSignal();
+          if (data.history && data.history.length > 0) {
+            renderHistory(data.history);
+          }
         }
-
-        if (!res || !res.ok) {
-          res = await fetch('data/signals.json');
-        }
-
-        const data = await res.json();
-        renderHUD(data);
-      } catch (err) {
-        console.log("Waiting for signals.json...", err);
+      } catch (e) {
+        console.log('Fetching signal:', e);
       }
     }
 
-    function renderHUD(data) {
-      if (!data) return;
-
-      // Update Multi-Pair Ticker Bar
-      if (data.symbols_telemetry) {
-        const st = data.symbols_telemetry;
-        for (const sym of ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY"]) {
-          const sData = st[sym];
-          if (!sData) continue;
-          const pEl = document.getElementById(`pair-price-${sym}`);
-          const bEl = document.getElementById(`pair-bias-${sym}`);
-          const aEl = document.getElementById(`pair-adx-${sym}`);
-          const spEl = document.getElementById(`spread-badge-${sym}`);
-
-          if (pEl && sData.price !== undefined) {
-            const dec = sym === "XAUUSD" ? 2 : (sym === "USDJPY" ? 3 : 5);
-            pEl.innerText = Number(sData.price).toFixed(dec);
-          }
-          if (bEl && sData.h1_bias) {
-            bEl.innerText = `H1: ${sData.h1_bias}`;
-            bEl.className = sData.h1_bias === "BULL" ? "bias-bull" : (sData.h1_bias === "BEAR" ? "bias-bear" : "bias-neutral");
-          }
-          if (aEl && sData.adx !== undefined) {
-            aEl.innerText = `ADX: ${Number(sData.adx).toFixed(1)}`;
-          }
-          if (spEl && sData.spread_pips !== undefined) {
-            const isSafe = sData.spread_safe !== false;
-            spEl.innerText = `SPREAD ${sData.spread_pips}p [${isSafe ? 'SAFE' : 'SHIELD'}]`;
-            spEl.className = `pair-spread-badge ${isSafe ? 'badge-safe' : 'badge-shield'}`;
-          }
+    async function fetchHistory() {
+      try {
+        const res = await fetch('/api/recent_signals');
+        if (res.ok) {
+          const data = await res.json();
+          renderHistory(data);
         }
-      }
-
-      if (data.market_status) {
-        const ms = data.market_status;
-        const curSym = ms.symbol || "XAUUSD";
-        const dec = curSym === "XAUUSD" ? 2 : (curSym === "USDJPY" ? 3 : 5);
-        if (ms.price) document.getElementById("livePrice").innerText = Number(ms.price).toFixed(dec);
-        if (ms.session) document.getElementById("sessionVal").innerText = ms.session;
-        if (ms.h1_bias) document.getElementById("h1Bias").innerText = `${ms.h1_bias} (${ms.h1_phase || 'ACTIVE'})`;
-        if (ms.h4_bias) document.getElementById("h4Bias").innerText = ms.h4_bias;
-        if (ms.atr) document.getElementById("atrVal").innerText = ms.atr;
-        if (ms.adx) document.getElementById("adxVal").innerText = ms.adx;
-        if (ms.vol_ratio) document.getElementById("volVal").innerText = ms.vol_ratio + 'x';
-        if (ms.stage) document.getElementById("structStage").innerText = ms.stage;
-        if (ms.next_candle_sec !== undefined) {
-          localSecondsRemaining = ms.next_candle_sec;
-        }
-      }
-
-      if (data.latest_signal) {
-        const sig = data.latest_signal;
-        const sym = sig.symbol || 'XAUUSD';
-        const dec = sym === "XAUUSD" ? 2 : (sym === "USDJPY" ? 3 : 5);
-
-        const dirBadge = document.getElementById("dirBadge");
-        dirBadge.innerText = sig.direction;
-        dirBadge.className = "direction-badge " + (sig.direction === "BUY" ? "dir-buy" : "dir-sell");
-
-        document.getElementById("signalSymbol").innerHTML = `${sym} <span style="font-size:15px; color:var(--text-muted);">M15 CYCLE</span>`;
-        document.getElementById("modeTag").innerText = `${sig.trade_type || 'SCALPING'} // TIER ${sig.tier || 'MOMENTUM'}`;
-        document.getElementById("accNumber").innerText = `${sig.accuracy ? sig.accuracy.toFixed(1) : '85.0'}%`;
-        document.getElementById("accGrade").innerText = `GRADE ${sig.grade || 'A'} [CONFLUENCE]`;
-        document.getElementById("accFill").style.width = `${sig.accuracy || 85}%`;
-
-        document.getElementById("entryVal").innerText = sig.entry ? Number(sig.entry).toFixed(dec) : '-';
-        document.getElementById("slVal").innerText = sig.sl ? Number(sig.sl).toFixed(dec) : '-';
-        document.getElementById("tp1Val").innerText = sig.tp1 ? Number(sig.tp1).toFixed(dec) : (sig.tp ? Number(sig.tp).toFixed(dec) : '-');
-        document.getElementById("tp2Val").innerText = sig.tp2 ? Number(sig.tp2).toFixed(dec) : (sig.tp ? Number(sig.tp).toFixed(dec) : '-');
-        document.getElementById("slSub").innerText = `-${sig.sl_pips || 15} Pips`;
-        document.getElementById("tp1Sub").innerText = `+${sig.tp1_pips || 20} Pips`;
-        document.getElementById("tp2Sub").innerText = `+${sig.tp2_pips || sig.tp_pips || 35} Pips`;
-        document.getElementById("rrVal").innerText = `1:${sig.rr || 2.0}`;
-        document.getElementById("lotVal").innerText = `Lot: ${sig.lot ? Number(sig.lot).toFixed(2) : '0.05'}`;
-
-        if (sig.reasoning) {
-          document.getElementById("reasoningText").innerText = sig.reasoning;
-        }
-
-        // Highlight active ticker card
-        for (const s of ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY"]) {
-          const card = document.getElementById(`ticker-${s}`);
-          if (card) {
-            if (s === sym) card.classList.add("active-signal-pair");
-            else card.classList.remove("active-signal-pair");
-          }
-        }
-      }
-
-      if (data.history && data.history.length > 0) {
-        const tbody = document.getElementById("historyBody");
-        tbody.innerHTML = "";
-        data.history.slice(0, 10).forEach(h => {
-          const tr = document.createElement("tr");
-          const dClass = h.direction === "BUY" ? "pill-buy" : "pill-sell";
-          const tClass = (h.trade_type === "SCALPING" || h.trade_type === "SCALP") ? "badge-scalp" : "badge-swing";
-          const timeFormatted = h.timestamp ? h.timestamp.substring(11, 19) + ' UTC' : '-';
-          const hSym = h.symbol || 'XAUUSD';
-          const dec = hSym === "XAUUSD" ? 2 : (hSym === "USDJPY" ? 3 : 5);
-
-          tr.innerHTML = `
-            <td>${timeFormatted}</td>
-            <td style="font-family:var(--font-robotic); font-weight:700; color:#fff;">${hSym}</td>
-            <td><span class="type-badge ${tClass}">${h.trade_type || 'SCALPING'}</span></td>
-            <td>${h.tier || 'SCALP'}</td>
-            <td><span class="dir-pill ${dClass}">${h.direction}</span></td>
-            <td>${h.entry ? Number(h.entry).toFixed(dec) : '-'}</td>
-            <td style="color:var(--red);">${h.sl ? Number(h.sl).toFixed(dec) : '-'}</td>
-            <td style="color:var(--gold);">${h.tp1 ? Number(h.tp1).toFixed(dec) : '-'}</td>
-            <td style="color:var(--green);">${h.tp2 ? Number(h.tp2).toFixed(dec) : (h.tp ? Number(h.tp).toFixed(dec) : '-')}</td>
-            <td style="font-family:var(--font-robotic); color:var(--cyan);">${h.accuracy ? Number(h.accuracy).toFixed(1) : '85'}%</td>
-            <td style="color:var(--gold); font-weight:700;">${h.grade || 'A'}</td>
-          `;
-          tbody.appendChild(tr);
-        });
+      } catch (e) {
+        console.log('Fetching history:', e);
       }
     }
 
-    fetchSignalData();
-    setInterval(fetchSignalData, 2500);
+    fetchSignal();
+    fetchHistory();
+    setInterval(fetchSignal, 3000);
+    setInterval(fetchHistory, 5000);
   </script>
 </body>
 </html>

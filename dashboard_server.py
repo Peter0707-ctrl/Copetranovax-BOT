@@ -43,6 +43,22 @@ class HUDRequestHandler(SimpleHTTPRequestHandler):
                 self.wfile.write(b"<h1>Error: dashboard.html not found</h1>")
             return
 
+        if url == "/api/recent_signals":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            if os.path.exists(SIGNALS_JSON):
+                try:
+                    with open(SIGNALS_JSON, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    self.wfile.write(json.dumps(data.get("history", [])).encode("utf-8"))
+                    return
+                except Exception:
+                    pass
+            self.wfile.write(b"[]")
+            return
+
         if url == "/api/latest_signal" or url == "/api/status":
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
