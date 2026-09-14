@@ -442,58 +442,6 @@
       transform: translateY(0);
     }
 
-    /* Plain Step-by-Step Box */
-    .steps-box {
-      background: rgba(13, 18, 29, 0.9);
-      border: 1px solid rgba(0, 216, 246, 0.2);
-      border-radius: 12px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .steps-title {
-      font-family: var(--font-orbitron);
-      font-size: 13px;
-      font-weight: 800;
-      color: var(--neon-cyan);
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-
-    .steps-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .step-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      font-size: 13px;
-      line-height: 1.5;
-      color: var(--text-main);
-    }
-
-    .step-num {
-      background: rgba(0, 216, 246, 0.15);
-      color: var(--neon-cyan);
-      border: 1px solid rgba(0, 216, 246, 0.3);
-      font-family: var(--font-mono);
-      font-weight: 800;
-      font-size: 12px;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
-
     /* Right Sidebar */
     .sidebar {
       display: flex;
@@ -714,33 +662,6 @@
         <button class="copy-btn" id="copyBtn" onclick="copyActiveSignal()">
           BONYEZA HAPA KUKOPI SIGNAL (COPY FOR MT5)
         </button>
-
-        <!-- Plain Step-by-Step Instructions -->
-        <div class="steps-box">
-          <div class="steps-title">JINSI YA KUTRADE SIGNAL HII KWENYE MT5 (HATUA KWA HATUA)</div>
-          <div class="steps-list">
-            <div class="step-item">
-              <div class="step-num">1</div>
-              <div>Fungua app yako ya <strong>MetaTrader 5 (MT5)</strong> na uchague pair ya <strong id="stepSymbol">XAUUSD</strong>.</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">2</div>
-              <div>Fungua oda ya <strong id="stepAction">BUY</strong> kwa bei ya sasa <strong id="stepEntry">2654.50</strong> (tumia lot size inayolingana na mtaji wako).</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">3</div>
-              <div>Weka <strong>Stop Loss: <span id="stepSL">2646.50</span></strong>. Hii inalinda mtaji wako usipotee hata soko likigeuka ghafla.</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">4</div>
-              <div>Weka <strong>Take Profit 1: <span id="stepTP1">2662.50</span></strong>. Bei ikifika hapa, funga nusu (50%) ya oda yako uweke faida mfukoni.</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">5</div>
-              <div>Bei ikishafika TP1, <strong>sogeza Stop Loss hadi kwenye Entry</strong> (Breakeven). Sasa biashara yako ipo 100% Risk-Free kuelekea <strong>TP2: <span id="stepTP2">2674.50</span></strong>!</div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- Right Column: Protection Shield & Timing -->
@@ -904,13 +825,6 @@
       document.getElementById('valSL').textContent = sl;
       document.getElementById('valTP1').textContent = tp1;
       document.getElementById('valTP2').textContent = tp2;
-
-      document.getElementById('stepSymbol').textContent = sym;
-      document.getElementById('stepAction').textContent = action;
-      document.getElementById('stepEntry').textContent = entry;
-      document.getElementById('stepSL').textContent = sl;
-      document.getElementById('stepTP1').textContent = tp1;
-      document.getElementById('stepTP2').textContent = tp2;
 
       document.getElementById('sideAccuracy').textContent = `${acc}% (${grade})`;
       document.getElementById('sideStyle').textContent = style;
