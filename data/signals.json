@@ -1,23 +1,46 @@
 {
   "latest_signal": {
-    "signal_id": "TREND_B_20260914223123",
+    "signal_id": "XAUUSD_SWING_B_20260914225024",
+    "symbol": "XAUUSD",
     "direction": "BUY",
     "trade_type": "INTRA-SWING",
-    "tier": "TREND",
+    "tier": "SWING",
     "accuracy": 94.5,
     "grade": "A+",
     "entry": 4724.01,
     "sl": 4720.01,
-    "tp": 4734.01,
+    "tp": 4735.21,
+    "tp1": 4730.01,
+    "tp2": 4735.21,
     "sl_pips": 40,
-    "tp_pips": 100,
-    "rr": 2.5,
-    "lot": 0.05,
-    "reasoning": "M15 [INTRA-SWING BUY]: High-probability swing setup via TREND. Confluences: H1 BULL trend aligned, H1 pullback discount, full EMA 8/21/50 alignment. Positioning for multi-hour trend continuation toward key liquidity pools.",
+    "tp_pips": 112,
+    "tp1_pips": 60,
+    "tp2_pips": 112,
+    "rr": 2.8,
+    "lot": 0.01,
+    "reasoning": "M15 [INTRA-SWING BUY]: High-probability swing setup via SWING. Confluences: H1 BULL trend aligned, H1 pullback discount, full EMA 8/21/50 alignment. Positioning for multi-hour trend continuation toward key liquidity pools.",
     "session": "LONDON",
-    "timestamp": "2026-09-14T22:31:23.574646+00:00"
+    "timestamp": "2026-09-14T22:50:25.466196+00:00"
   },
   "history": [
+    {
+      "signal_id": "TREND_B_20260914223123",
+      "direction": "BUY",
+      "trade_type": "INTRA-SWING",
+      "tier": "TREND",
+      "accuracy": 94.5,
+      "grade": "A+",
+      "entry": 4724.01,
+      "sl": 4720.01,
+      "tp": 4734.01,
+      "sl_pips": 40,
+      "tp_pips": 100,
+      "rr": 2.5,
+      "lot": 0.05,
+      "reasoning": "M15 [INTRA-SWING BUY]: High-probability swing setup via TREND. Confluences: H1 BULL trend aligned, H1 pullback discount, full EMA 8/21/50 alignment. Positioning for multi-hour trend continuation toward key liquidity pools.",
+      "session": "LONDON",
+      "timestamp": "2026-09-14T22:31:23.574646+00:00"
+    },
     {
       "signal_id": "SWING_B_20260914223123",
       "direction": "BUY",
@@ -37,20 +60,66 @@
       "timestamp": "2026-09-14T22:31:23.457960+00:00"
     }
   ],
+  "symbols_telemetry": {
+    "XAUUSD": {
+      "price": 4724.01,
+      "spread_pips": 1.2,
+      "max_spread": 2.8,
+      "spread_safe": true,
+      "adx": 24.8,
+      "atr": 5.055,
+      "h1_bias": "BULL",
+      "h1_phase": "PULLBACK",
+      "stage": "IDLE"
+    },
+    "EURUSD": {
+      "price": 1.93417,
+      "spread_pips": 0.8,
+      "max_spread": 1.5,
+      "spread_safe": true,
+      "adx": 24.8,
+      "atr": 0.002,
+      "h1_bias": "BULL",
+      "h1_phase": "PULLBACK",
+      "stage": "IDLE"
+    },
+    "GBPUSD": {
+      "price": 2.30853,
+      "spread_pips": 1.2,
+      "max_spread": 1.8,
+      "spread_safe": true,
+      "adx": 24.8,
+      "atr": 0.002,
+      "h1_bias": "BULL",
+      "h1_phase": "PULLBACK",
+      "stage": "IDLE"
+    },
+    "USDJPY": {
+      "price": 276.31,
+      "spread_pips": 1.2,
+      "max_spread": 1.6,
+      "spread_safe": true,
+      "adx": 24.8,
+      "atr": 0.296,
+      "h1_bias": "BULL",
+      "h1_phase": "PULLBACK",
+      "stage": "IDLE"
+    }
+  },
   "market_status": {
     "symbol": "XAUUSD",
     "price": 4724.01,
     "session": "LONDON",
     "h1_bias": "BULL",
-    "h1_phase": "PULLBACK",
-    "h4_bias": "BULL",
-    "adx": 24.8,
-    "atr": 5.05,
-    "vol_ratio": 1.24,
-    "struct_score": 10,
-    "stage": "IDLE",
+    "h1_phase": "RANGING",
+    "h4_bias": "NEUTRAL",
+    "adx": 24.0,
+    "atr": 1.5,
+    "vol_ratio": 1.0,
+    "struct_score": 2,
+    "stage": "DISPLACEMENT",
     "risk_status": "OK: RISK BUDGET ACTIVE",
-    "next_candle_sec": 480,
-    "last_update": "2026-09-14T22:31:23.599696+00:00"
+    "next_candle_sec": 420,
+    "last_update": "2026-09-14T22:50:25.477438+00:00"
   }
 }

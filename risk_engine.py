@@ -113,6 +113,14 @@ MIN_LOT               = 0.01
 MAX_LOT               = 1.00
 EXPECTED_SLIPPAGE     = 1.0
 
+# Multi-Symbol Specifications (Strict Precision & Spread Isolation)
+SYMBOL_SPECS = {
+    "XAUUSD": {"pip_size": 0.10,   "pip_val": 10.0, "max_spread": 2.8, "be_pips": 12, "sl_mult": 1.4, "digits": 2},
+    "EURUSD": {"pip_size": 0.0001, "pip_val": 10.0, "max_spread": 1.5, "be_pips": 10, "sl_mult": 1.2, "digits": 5},
+    "GBPUSD": {"pip_size": 0.0001, "pip_val": 10.0, "max_spread": 1.8, "be_pips": 12, "sl_mult": 1.3, "digits": 5},
+    "USDJPY": {"pip_size": 0.01,   "pip_val": 9.0,  "max_spread": 1.6, "be_pips": 10, "sl_mult": 1.2, "digits": 3},
+}
+
 ATR_RISK_TABLE = [
     (80, 0.40),
     (65, 0.60),
@@ -124,9 +132,9 @@ CONSEC_LOSS_LIMIT     = 4
 COOLDOWN_HOURS        = 2
 POST_LOSS_PAUSE_MIN   = 15
 
-BREAKEVEN_AT_R        = 1.0
-BREAKEVEN_BUFFER      = 2.0
-PARTIAL_TP_AT_R       = 1.5
+BREAKEVEN_AT_R        = 0.8
+BREAKEVEN_BUFFER      = 1.0
+PARTIAL_TP_AT_R       = 1.2
 TRAIL_ATR_MULT        = 1.2
 MAX_TRAIL_PIPS        = 40.0
 
@@ -136,11 +144,11 @@ MAX_TRADE_AGE = {
     "SWING": 480,
 }
 
-MAX_OPEN_TRADES       = 3
-MAX_TOTAL_RISK_PCT    = 3.0
+MAX_OPEN_TRADES       = 4
+MAX_TOTAL_RISK_PCT    = 3.5
 MAX_SAME_DIRECTION    = 2
 
-MAX_SPREAD_ATR_RATIO  = 0.20
+MAX_SPREAD_ATR_RATIO  = 0.25
 
 CONF_PENALTY_PER_LOSS = 2.0
 MAX_CONF_PENALTY      = 10.0
@@ -296,11 +304,11 @@ class RiskEngine:
                    spread_pips: float = 0.0,
                    atr_value: float = 0.0,
                    atr_pct: float = 50.0,
-                   direction: int = 0) -> tuple:
+                   direction: int = 0,
+                   symbol: str = "XAUUSD") -> tuple:
         """
         FIX 7: Daily stop now includes floating losses.
-        effective_daily_loss = realized loss + floating loss.
-        Prevents opening new trades while sitting on large unrealized loss.
+        Includes dedicated Spread Shield per symbol based on SYMBOL_SPECS.
         """
         eq = equity if equity else self.account_balance
         now = datetime.now(tz=timezone.utc)
@@ -363,11 +371,17 @@ class RiskEngine:
         if total_risk >= MAX_TOTAL_RISK_PCT:
             return False, f"Max concurrent risk ({total_risk:.1f}% >= {MAX_TOTAL_RISK_PCT}%)"
 
-        # Spread quality
+        # Spread shield: check strict max allowed spread per pair
+        spec = SYMBOL_SPECS.get(symbol, SYMBOL_SPECS["XAUUSD"])
+        max_allowed_spread = spec.get("max_spread", 2.8)
+        if spread_pips > max_allowed_spread:
+            return False, f"Spread shield block: {symbol} spread={spread_pips:.1f}pips > {max_allowed_spread:.1f}pips max"
+
+        pip_sz = spec.get("pip_size", self.pip_size)
         if atr_value > 0 and spread_pips > 0:
-            spread_ratio = (spread_pips * self.pip_size) / atr_value
+            spread_ratio = (spread_pips * pip_sz) / atr_value
             if spread_ratio > MAX_SPREAD_ATR_RATIO:
-                return False, (f"Spread too wide: ratio={spread_ratio:.2f}")
+                return False, f"Spread/ATR ratio too high: {spread_ratio:.2f}"
 
         # Soft stop (allowed, reduced size)
         if effective_loss_pct >= DAILY_SOFT_STOP_PCT:
@@ -379,13 +393,21 @@ class RiskEngine:
     # DYNAMIC LOT SIZING
     # ==========================================================================
 
+    # ==========================================================================
+    # DYNAMIC LOT SIZING
+    # ==========================================================================
+
     def get_lot_size(self,
                      sl_pips: int,
                      equity: float = None,
                      atr_pct: float = 50.0,
-                     atr_value: float = 0.0) -> float:
+                     atr_value: float = 0.0,
+                     symbol: str = "XAUUSD") -> float:
         if sl_pips <= 0:
             return MIN_LOT
+
+        spec = SYMBOL_SPECS.get(symbol, SYMBOL_SPECS["XAUUSD"])
+        pip_val = spec.get("pip_val", self.pip_value_per_lot)
 
         eq            = equity if equity else self.account_balance
         risk_pct      = self._get_adaptive_risk_pct(atr_pct)
@@ -400,7 +422,7 @@ class RiskEngine:
                         else EXPECTED_SLIPPAGE
         effective_sl  = sl_pips + dynamic_slip
 
-        lot = risk_dollars / (effective_sl * self.pip_value_per_lot)
+        lot = risk_dollars / (effective_sl * pip_val)
         return self._normalise_lot(lot)
 
     def _get_adaptive_risk_pct(self, atr_pct: float) -> float:
@@ -424,12 +446,18 @@ class RiskEngine:
                        sl_pips: int,
                        tp_pips: int,
                        tier: str = "TREND",
-                       lot: float = 0.01) -> None:
+                       lot: float = 0.01,
+                       symbol: str = "XAUUSD",
+                       tp1: float = 0.0,
+                       tp2: float = 0.0) -> None:
         self.open_trades[signal_id] = {
+            "symbol":         symbol,
             "direction":      direction,
             "entry":          entry,
             "sl_pips":        sl_pips,
             "tp_pips":        tp_pips,
+            "tp1":            tp1,
+            "tp2":            tp2,
             "tier":           tier,
             "lot":            lot,
             "breakeven_done": False,
@@ -440,9 +468,10 @@ class RiskEngine:
         self.trades_today += 1
         self._save_state()
         self._log(
-            f"Registered: {signal_id} | "
+            f"Registered: {signal_id} | {symbol} "
             f"{'BUY' if direction == 1 else 'SELL'} | "
-            f"lot={lot:.2f} | tier={tier} | entry={entry:.2f}"
+            f"lot={lot:.2f} | tier={tier} | entry={entry:.2f} | "
+            f"TP1={tp1} TP2={tp2}"
         )
 
     # ==========================================================================
@@ -453,11 +482,13 @@ class RiskEngine:
                                 signal_id: str,
                                 current_price: float,
                                 stable_atr: float,
-                                tier: str = "TREND") -> dict:
+                                tier: str = "TREND",
+                                symbol: str = "XAUUSD") -> dict:
         """
-        FIX 6: Trade age calculation forces open_dt to UTC before subtraction.
-        FIX 4 prev: independent if blocks for breakeven, partial, trail.
-        FIX (trail): trail distance capped at MAX_TRAIL_PIPS.
+        Multi-Symbol Trade Management:
+        - Fast Breakeven Defense: triggers at +10 to +12 pips or 0.8R.
+        - Dual TP tracking: triggers partial close at TP1.
+        - Adaptive Trailing Stop toward TP2.
         """
         actions = {
             "breakeven":   False,
@@ -471,6 +502,12 @@ class RiskEngine:
             return actions
 
         trade     = self.open_trades[signal_id]
+        sym       = trade.get("symbol", symbol)
+        spec      = SYMBOL_SPECS.get(sym, SYMBOL_SPECS["XAUUSD"])
+        pip_sz    = spec.get("pip_size", self.pip_size)
+        digits    = spec.get("digits", 2)
+        be_pips   = spec.get("be_pips", 10)
+
         entry     = trade["entry"]
         direction = trade["direction"]
         sl_pips   = trade["sl_pips"]
@@ -478,50 +515,54 @@ class RiskEngine:
         reasons   = []
 
         if direction == 1:
-            profit_pips = (current_price - entry) / self.pip_size
+            profit_pips = (current_price - entry) / pip_sz
         else:
-            profit_pips = (entry - current_price) / self.pip_size
+            profit_pips = (entry - current_price) / pip_sz
 
         one_r = sl_pips
 
-        # Breakeven
-        if profit_pips >= one_r * BREAKEVEN_AT_R and not trade["breakeven_done"]:
+        # Fast Breakeven Defense (+10 to +12 pips or 0.8R)
+        if (profit_pips >= be_pips or profit_pips >= one_r * BREAKEVEN_AT_R) and not trade["breakeven_done"]:
             trade["breakeven_done"] = True
-            buf   = BREAKEVEN_BUFFER * self.pip_size
-            be_sl = round(entry + buf if direction == 1 else entry - buf, 2)
+            buf   = BREAKEVEN_BUFFER * pip_sz
+            be_sl = round(entry + buf if direction == 1 else entry - buf, digits)
             trade["trail_sl"]    = be_sl
             actions["breakeven"] = True
             actions["trail_sl"]  = be_sl
-            reasons.append(f"Breakeven SL->{be_sl:.2f}")
-            self._log(f"BREAKEVEN {signal_id} profit={profit_pips:.0f}pips")
+            reasons.append(f"Fast Breakeven protected SL->{be_sl} (+{profit_pips:.0f}pips)")
+            self._log(f"FAST BREAKEVEN {signal_id} ({sym}) profit={profit_pips:.1f}pips")
             self._save_state()
 
-        # Partial TP -- independent
-        if profit_pips >= one_r * PARTIAL_TP_AT_R and not trade["partial_done"]:
+        # Partial TP at TP1 or 1.2R
+        tp1_price = trade.get("tp1", 0.0)
+        tp1_hit = False
+        if tp1_price > 0:
+            tp1_hit = (current_price >= tp1_price) if direction == 1 else (current_price <= tp1_price)
+
+        if (tp1_hit or profit_pips >= one_r * PARTIAL_TP_AT_R) and not trade["partial_done"]:
             trade["partial_done"]  = True
             actions["partial_tp"]  = True
-            reasons.append(f"Partial TP {profit_pips:.0f}pips (1.5R)")
-            self._log(f"PARTIAL TP {signal_id} profit={profit_pips:.0f}pips")
+            reasons.append(f"Partial TP1 secured (+{profit_pips:.0f}pips)")
+            self._log(f"PARTIAL TP1 {signal_id} ({sym}) profit={profit_pips:.1f}pips")
             self._save_state()
 
-        # Trailing -- independent, capped
+        # Trailing toward TP2
         if trade["breakeven_done"] and stable_atr > 0:
             raw_trail    = stable_atr * TRAIL_ATR_MULT
-            capped_trail = min(raw_trail, MAX_TRAIL_PIPS * self.pip_size)
+            capped_trail = min(raw_trail, MAX_TRAIL_PIPS * pip_sz)
             current_sl   = trade.get("trail_sl")
 
             if direction == 1:
-                new_sl = round(current_price - capped_trail, 2)
+                new_sl = round(current_price - capped_trail, digits)
                 if current_sl is None or new_sl > current_sl:
                     trade["trail_sl"]   = new_sl
                     actions["trail_sl"] = new_sl
-                    reasons.append(f"Trail SL->{new_sl:.2f}")
             else:
-                new_sl = round(current_price + capped_trail, 2)
+                new_sl = round(current_price + capped_trail, digits)
                 if current_sl is None or new_sl < current_sl:
                     trade["trail_sl"]   = new_sl
                     actions["trail_sl"] = new_sl
-                    reasons.append(f"Trail SL->{new_sl:.2f}")
+                    reasons.append(f"Trail SL->{new_sl}")
 
         # Trade age -- FIX 6: timezone-safe
         max_age_min   = MAX_TRADE_AGE.get(tier_used, MAX_TRADE_AGE["TREND"])

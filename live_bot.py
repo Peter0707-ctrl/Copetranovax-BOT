@@ -96,7 +96,7 @@ from structure_engine import (
     SEQ_DISPLACE,
     get_session_memory,
 )
-from risk_engine     import RiskEngine, compute_pip_value
+from risk_engine     import RiskEngine, compute_pip_value, SYMBOL_SPECS
 from performance_engine import PerformanceEngine
 
 
@@ -104,6 +104,7 @@ from performance_engine import PerformanceEngine
 # CONFIG
 # ==============================================================================
 
+SYMBOLS         = ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY"]
 SYMBOL          = "XAUUSD"
 MAGIC           = 20240101
 BARS            = 350
@@ -212,8 +213,8 @@ def _rr_from_confidence(conf: float) -> float:
     if conf >= 65: return 2.0
     return 1.5
 
-# UP 6: Signal timing tracker (per direction)
-_last_signal_time: dict = {}   # {direction: datetime}
+# Signal timing tracker per (symbol, direction)
+_last_signal_time: dict = {}   # {(symbol, direction): datetime}
 
 
 # ==============================================================================
@@ -393,9 +394,11 @@ def is_pyramiding_allowed(direction: int, risk: RiskEngine) -> bool:
 # ==============================================================================
 
 def scan_tiers(feat: dict, htf_bias: dict, session: str,
-               session_mem: dict = None, now_hour: int = -1) -> list:
+               session_mem: dict = None, now_hour: int = -1,
+               symbol: str = "XAUUSD") -> list:
     """
-    Scans all 7 tiers. Returns list ordered by priority (highest first).
+    Scans all 7 tiers with symbol-isolated pip and ATR calibration.
+    Returns list ordered by priority (highest first).
     Each tier carries its own min_stage requirement.
 
     Tier priority: BREAKOUT > SWING > PULLBACK > TREND > MICRO > EXPANSION > SCALP
@@ -420,8 +423,17 @@ def scan_tiers(feat: dict, htf_bias: dict, session: str,
     avg_rng = feat["_avg_rng_5"]
     h1      = htf_bias.get("H1", "NEUTRAL")
 
+    spec    = SYMBOL_SPECS.get(symbol, SYMBOL_SPECS["XAUUSD"])
+    pip_sz  = spec.get("pip_size", 0.10)
+    atr_pips = (atr / pip_sz) if pip_sz > 0 else (atr * 10)
+
+    # Universal pip thresholds
+    min_scalp_pips = 8.0
+    min_trend_pips = 12.0
+    min_swing_pips = 20.0
+
     # ── TIER 1: SESSION BREAKOUT (London 07:00, Overlap 13:00) ───────────────
-    if atr >= 0.9 and now_hour >= 0:
+    if atr_pips >= min_scalp_pips and now_hour >= 0:
         win = BREAKOUT_WINDOWS.get(session)
         if win and win[0] <= now_hour < win[1]:
             asia_h = smem.get("asia_high", 0)
@@ -430,18 +442,18 @@ def scan_tiers(feat: dict, htf_bias: dict, session: str,
             if asia_h and close > asia_h + buf and dip > dim and br >= 0.40:
                 signals.insert(0, {
                     "tier": "BREAKOUT", "trade_type": "SCALPING", "direction": 1,
-                    "reason": f"BREAKOUT BUY: Asia high {asia_h:.2f} (close={close:.2f})",
+                    "reason": f"BREAKOUT BUY: Asia high {asia_h} (close={close})",
                     "min_stage": SEQ_DISPLACE,
                 })
             if asia_l and close < asia_l - buf and dim > dip and br >= 0.40:
                 signals.insert(0, {
                     "tier": "BREAKOUT", "trade_type": "SCALPING", "direction": -1,
-                    "reason": f"BREAKOUT SELL: Asia low {asia_l:.2f} (close={close:.2f})",
+                    "reason": f"BREAKOUT SELL: Asia low {asia_l} (close={close})",
                     "min_stage": SEQ_DISPLACE,
                 })
 
     # ── TIER 2: SWING (strictest -- full alignment) ───────────────────────────
-    if atr >= ATR_MIN_SWING:
+    if atr_pips >= min_swing_pips:
         if ef > em > es and adx >= ADX_STRONG and dip > dim and h1 in ("BULL", "NEUTRAL"):
             signals.append({
                 "tier": "SWING", "trade_type": "INTRA-SWING", "direction": 1,
@@ -456,31 +468,29 @@ def scan_tiers(feat: dict, htf_bias: dict, session: str,
             })
 
     # ── TIER 3: EMA21 PULLBACK (UP 4 -- new) ─────────────────────────────────
-    # Price pulls back to EMA21 in a trend -- rejection candle confirms entry
-    if atr >= ATR_MIN_TREND:
+    if atr_pips >= min_trend_pips:
         ema_tol   = atr * 0.35
-        touch_buy  = lo  <= em + ema_tol and close > em   # low touched EMA21, closed above
-        touch_sell = hi  >= em - ema_tol and close < em   # high touched EMA21, closed below
+        touch_buy  = lo  <= em + ema_tol and close > em
+        touch_sell = hi  >= em - ema_tol and close < em
 
         if (touch_buy and ef > em and close > es
                 and close > op and dip > dim and adx >= ADX_WEAK):
             signals.append({
                 "tier": "PULLBACK", "trade_type": "INTRA-SWING", "direction": 1,
-                "reason": f"PULLBACK BUY: EMA21 touch (lo={lo:.2f} em={em:.2f})",
+                "reason": f"PULLBACK BUY: EMA21 touch (lo={lo} em={em})",
                 "min_stage": SEQ_DISPLACE,
             })
         if (touch_sell and ef < em and close < es
                 and close < op and dim > dip and adx >= ADX_WEAK):
             signals.append({
                 "tier": "PULLBACK", "trade_type": "INTRA-SWING", "direction": -1,
-                "reason": f"PULLBACK SELL: EMA21 touch (hi={hi:.2f} em={em:.2f})",
+                "reason": f"PULLBACK SELL: EMA21 touch (hi={hi} em={em})",
                 "min_stage": SEQ_DISPLACE,
             })
 
     # ── TIER 4: TREND (UP 3 -- relaxed EMA) ──────────────────────────────────
-    # UP 3: relaxed from (ef>em>es) to (ef>em AND close>es)
-    if atr >= ATR_MIN_TREND:
-        buy_ema  = ef > em and close > es    # UP 3: relaxed
+    if atr_pips >= min_trend_pips:
+        buy_ema  = ef > em and close > es
         sell_ema = ef < em and close < es
         if buy_ema and adx >= ADX_WEAK and dip > dim:
             signals.append({
@@ -496,41 +506,39 @@ def scan_tiers(feat: dict, htf_bias: dict, session: str,
             })
 
     # ── TIER 5: MICRO BREAKOUT (UP 8 -- new) ─────────────────────────────────
-    # Successive high/low break with volume -- institutional momentum burst
-    if atr >= 0.9 and vr >= 1.25 and adx >= ADX_WEAK:
-        close_near_hi  = (hi - close) < atr * 0.35   # closed near candle high
+    if atr_pips >= min_scalp_pips and vr >= 1.25 and adx >= ADX_WEAK:
+        close_near_hi  = (hi - close) < atr * 0.35
         close_near_lo  = (close - lo)  < atr * 0.35
         if hi > prev_h and close_near_hi and dip > dim:
             signals.append({
                 "tier": "MICRO", "trade_type": "SCALPING", "direction": 1,
-                "reason": f"MICRO BUY: hi {hi:.2f}>{prev_h:.2f} vol={vr:.1f}x",
+                "reason": f"MICRO BUY: hi {hi}>{prev_h} vol={vr:.1f}x",
                 "min_stage": SEQ_DISPLACE,
             })
         if lo < prev_l and close_near_lo and dim > dip:
             signals.append({
                 "tier": "MICRO", "trade_type": "SCALPING", "direction": -1,
-                "reason": f"MICRO SELL: lo {lo:.2f}<{prev_l:.2f} vol={vr:.1f}x",
+                "reason": f"MICRO SELL: lo {lo}<{prev_l} vol={vr:.1f}x",
                 "min_stage": SEQ_DISPLACE,
             })
 
     # ── TIER 6: VOLATILITY EXPANSION (UP 12 -- new) ──────────────────────────
-    # Fires after compression: current range > 5-bar average * 1.5
     if avg_rng > 0 and feat["_range"] > avg_rng * 1.4 and vr >= 1.2 and adx >= ADX_WEAK:
         if close > ef and dip > dim:
             signals.append({
                 "tier": "EXPANSION", "trade_type": "SCALPING", "direction": 1,
-                "reason": f"EXPANSION BUY: rng={feat['_range']:.2f} avg={avg_rng:.2f}",
+                "reason": f"EXPANSION BUY: rng={feat['_range']:.4f} avg={avg_rng:.4f}",
                 "min_stage": SEQ_DISPLACE,
             })
         if close < ef and dim > dip:
             signals.append({
                 "tier": "EXPANSION", "trade_type": "SCALPING", "direction": -1,
-                "reason": f"EXPANSION SELL: rng={feat['_range']:.2f} avg={avg_rng:.2f}",
+                "reason": f"EXPANSION SELL: rng={feat['_range']:.4f} avg={avg_rng:.4f}",
                 "min_stage": SEQ_DISPLACE,
             })
 
     # ── TIER 7: SCALP (UP 5 -- relaxed body, volume confirmation) ───────────
-    if br >= 0.40 and vr >= 1.15 and atr >= ATR_MIN_SCALP:
+    if br >= 0.40 and vr >= 1.15 and atr_pips >= min_scalp_pips:
         if close > op and dip > dim:
             signals.append({
                 "tier": "SCALP", "trade_type": "SCALPING", "direction": 1,
@@ -741,73 +749,90 @@ def compute_accuracy_and_reasoning(direction: int, tier: str, trade_type: str,
 
 
 # ==============================================================================
-# TPSL CALCULATOR
+# MULTI-SYMBOL DUAL TPSL CALCULATOR
 # ==============================================================================
 
-def compute_tpsl(direction: int, entry: float, tier: str, trade_type: str,
-                  atr: float, confidence: float, accuracy: float) -> dict:
-    mult     = SL_MULT.get(tier, 1.5)
+def compute_dual_tpsl(direction: int, entry: float, tier: str, trade_type: str,
+                      atr: float, confidence: float, accuracy: float,
+                      symbol: str = "XAUUSD") -> dict:
+    from risk_engine import SYMBOL_SPECS
+    spec   = SYMBOL_SPECS.get(symbol, SYMBOL_SPECS["XAUUSD"])
+    pip_sz = spec.get("pip_size", 0.10)
+    digits = spec.get("digits", 2)
+    mult   = spec.get("sl_mult", 1.2) * SL_MULT.get(tier, 1.2)
+
     sl_price = atr * mult
-    sl_pips  = max(10, int(sl_price / PIP_SIZE))
+    min_sl_p = 12 if symbol == "XAUUSD" else 8
+    sl_pips  = max(min_sl_p, int(sl_price / pip_sz))
 
-    # For SCALPING: tighter SL and fast 1.5 - 2.0R target
-    # For INTRA-SWING: broader SL and 2.0 - 3.0R target
+    # Dual Take Profit Strategy:
+    # TP1: Quick conservative bank (funga 50% ya faida mapema)
+    # TP2: Extended trend runner (fuatilia trend)
     if trade_type == "SCALPING":
-        sl_pips = min(sl_pips, 22)
-        rr = 1.8 if accuracy >= 80 else 1.5
+        sl_pips = min(sl_pips, 22 if symbol == "XAUUSD" else 16)
+        tp1_pips = int(sl_pips * 1.2)
+        tp2_pips = int(sl_pips * 2.0)
     else:
-        sl_pips = max(18, min(sl_pips, 40))
-        rr = _rr_from_confidence(confidence)
-        if accuracy >= 85:
-            rr = max(rr, 2.5)
-
-    tp_pips = int(sl_pips * rr)
+        sl_pips = max(min_sl_p, min(sl_pips, 40 if symbol == "XAUUSD" else 30))
+        tp1_pips = int(sl_pips * 1.5)
+        tp2_pips = int(sl_pips * 2.8)
 
     if direction == 1:
-        sl = round(entry - sl_pips * PIP_SIZE, 2)
-        tp = round(entry + tp_pips * PIP_SIZE, 2)
+        sl  = round(entry - sl_pips * pip_sz, digits)
+        tp1 = round(entry + tp1_pips * pip_sz, digits)
+        tp2 = round(entry + tp2_pips * pip_sz, digits)
     else:
-        sl = round(entry + sl_pips * PIP_SIZE, 2)
-        tp = round(entry - tp_pips * PIP_SIZE, 2)
+        sl  = round(entry + sl_pips * pip_sz, digits)
+        tp1 = round(entry - tp1_pips * pip_sz, digits)
+        tp2 = round(entry - tp2_pips * pip_sz, digits)
 
     if accuracy >= 84.0: grade = "A+"
     elif accuracy >= 77.0: grade = "A"
     elif accuracy >= 70.0: grade = "B"
     else: grade = "C"
 
-    return {"sl": sl, "tp": tp, "sl_pips": sl_pips,
-             "tp_pips": tp_pips, "rr": round(rr, 1), "grade": grade}
+    return {
+        "sl": sl, "tp": tp2, "tp1": tp1, "tp2": tp2,
+        "sl_pips": sl_pips, "tp_pips": tp2_pips,
+        "tp1_pips": tp1_pips, "tp2_pips": tp2_pips,
+        "rr": round(tp2_pips / sl_pips, 1) if sl_pips > 0 else 2.0,
+        "grade": grade
+    }
 
 
 # ==============================================================================
-# SIGNAL FILE & JSON WRITER
+# SIGNAL FILE & JSON WRITER (MULTI-SYMBOL & DUAL TARGETS)
 # ==============================================================================
 
 def write_signal(direction: int, tier: str, trade_type: str, confidence: float,
                  accuracy: float, grade: str, reasoning: str,
                  tpsl: dict, lot: float, feat: dict, signal_id: str,
-                 entry_price: float, session: str) -> None:
+                 entry_price: float, session: str, symbol: str = "XAUUSD") -> None:
     dir_name = "BUY" if direction == 1 else "SELL"
     iso_now  = datetime.now(tz=timezone.utc).isoformat()
 
     lines = [
+        f"SYMBOL={symbol}",
         f"DIRECTION={dir_name}",
         f"TYPE={trade_type}",
         f"TIER={tier}",
         f"ACCURACY={accuracy:.1f}%",
         f"GRADE={grade}",
         f"SCORE={confidence:.0f}",
-        f"ENTRY={entry_price:.2f}",
-        f"TP={tpsl['tp']:.2f}",
-        f"SL={tpsl['sl']:.2f}",
-        f"TP_PIPS={tpsl['tp_pips']}",
+        f"ENTRY={entry_price}",
+        f"TP1={tpsl['tp1']}",
+        f"TP2={tpsl['tp2']}",
+        f"TP={tpsl['tp2']}",
+        f"SL={tpsl['sl']}",
+        f"TP1_PIPS={tpsl['tp1_pips']}",
+        f"TP2_PIPS={tpsl['tp2_pips']}",
         f"SL_PIPS={tpsl['sl_pips']}",
         f"RR={tpsl['rr']}",
         f"LOT={lot:.2f}",
         f"REASONING={reasoning}",
         f"SESSION={session}",
         f"ADX={feat.get('_adx', 0):.1f}",
-        f"ATR={feat.get('_atr_value', 0):.3f}",
+        f"ATR={feat.get('_atr_value', 0):.4f}",
         f"SIGNAL_ID={signal_id}",
         f"TIMESTAMP={iso_now}",
         f"STATUS=NEW",
@@ -828,6 +853,7 @@ def write_signal(direction: int, tier: str, trade_type: str, confidence: float,
         data_to_save = {
             "latest_signal": {
                 "signal_id": signal_id,
+                "symbol": symbol,
                 "direction": dir_name,
                 "trade_type": trade_type,
                 "tier": tier,
@@ -835,9 +861,13 @@ def write_signal(direction: int, tier: str, trade_type: str, confidence: float,
                 "grade": grade,
                 "entry": entry_price,
                 "sl": tpsl["sl"],
-                "tp": tpsl["tp"],
+                "tp": tpsl["tp2"],
+                "tp1": tpsl["tp1"],
+                "tp2": tpsl["tp2"],
                 "sl_pips": tpsl["sl_pips"],
-                "tp_pips": tpsl["tp_pips"],
+                "tp_pips": tpsl["tp2_pips"],
+                "tp1_pips": tpsl["tp1_pips"],
+                "tp2_pips": tpsl["tp2_pips"],
                 "rr": tpsl["rr"],
                 "lot": lot,
                 "reasoning": reasoning,
@@ -857,6 +887,7 @@ def write_signal(direction: int, tier: str, trade_type: str, confidence: float,
                     if old_latest and old_latest.get("signal_id") != signal_id:
                         old_hist.insert(0, old_latest)
                     data_to_save["history"] = old_hist[:30]
+                    data_to_save["symbols_telemetry"] = old_data.get("symbols_telemetry", {})
             except Exception:
                 pass
 
@@ -868,8 +899,10 @@ def write_signal(direction: int, tier: str, trade_type: str, confidence: float,
 
 def update_market_status_json(price: float, session: str, htf_bias: dict,
                               feat: dict, struct_score: int, stage: str,
-                              risk_status: str, next_candle_sec: int) -> None:
-    """Updates real-time market telemetry for Frontend Dashboard."""
+                              risk_status: str, next_candle_sec: int,
+                              symbol: str = "XAUUSD",
+                              symbols_telemetry: dict = None) -> None:
+    """Updates real-time market telemetry for Frontend Dashboard with multi-symbol support."""
     try:
         current_data = {}
         if os.path.exists(SIGNALS_JSON):
@@ -880,14 +913,14 @@ def update_market_status_json(price: float, session: str, htf_bias: dict,
                 current_data = {}
 
         current_data["market_status"] = {
-            "symbol": SYMBOL,
-            "price": round(price, 2),
+            "symbol": symbol,
+            "price": round(price, 4 if "USD" in symbol and symbol != "XAUUSD" else 2),
             "session": session,
             "h1_bias": htf_bias.get("H1", "NEUTRAL"),
             "h1_phase": htf_bias.get("H1_phase", "RANGING"),
             "h4_bias": htf_bias.get("H4", "NEUTRAL"),
             "adx": round(feat.get("_adx", 0), 1),
-            "atr": round(feat.get("_atr_value", 0), 2),
+            "atr": round(feat.get("_atr_value", 0), 4 if "USD" in symbol and symbol != "XAUUSD" else 2),
             "vol_ratio": round(feat.get("_vol_ratio", 1.0), 2),
             "struct_score": struct_score,
             "stage": stage,
@@ -895,6 +928,9 @@ def update_market_status_json(price: float, session: str, htf_bias: dict,
             "next_candle_sec": next_candle_sec,
             "last_update": datetime.now(tz=timezone.utc).isoformat(),
         }
+
+        if symbols_telemetry:
+            current_data["symbols_telemetry"] = symbols_telemetry
 
         os.makedirs(os.path.dirname(SIGNALS_JSON), exist_ok=True)
         with open(SIGNALS_JSON, "w", encoding="utf-8") as f:
@@ -918,25 +954,25 @@ def write_management(signal_id: str, action: str, value: float = 0.0) -> None:
 # SIGNAL ID
 # ==============================================================================
 
-def make_signal_id(tier: str, direction: int) -> str:
+def make_signal_id(tier: str, direction: int, symbol: str = "XAUUSD") -> str:
     ts = datetime.now(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
     d  = "B" if direction == 1 else "S"
-    return f"{tier}_{d}_{ts}"
+    return f"{symbol}_{tier}_{d}_{ts}"
 
 
 # ==============================================================================
-# UP 9: DUPLICATE GUARD -- candle timestamp based
+# UP 9: DUPLICATE GUARD -- candle timestamp based per symbol
 # ==============================================================================
 
 _seen_signals: deque = deque(maxlen=DUPE_GUARD_SIZE)
 
-def is_duplicate(tier: str, direction: int, candle_ts: str) -> bool:
+def is_duplicate(tier: str, direction: int, candle_ts: str, symbol: str = "XAUUSD") -> bool:
     """
-    UP 9: Key uses candle timestamp not SL/TP.
+    UP 9: Key uses candle timestamp per symbol.
     Allows continuation trades on different candles.
     Prevents spam on same candle only.
     """
-    key = f"{tier}_{direction}_{candle_ts}"
+    key = f"{symbol}_{tier}_{direction}_{candle_ts}"
     h   = hashlib.md5(key.encode()).hexdigest()[:12]
     if h in _seen_signals:
         return True
@@ -960,7 +996,10 @@ def fetch_bars(symbol: str, timeframe, count: int) -> pd.DataFrame:
             pass
 
     # Fallback to local historical dataset for simulation/signal generation
-    raw_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "raw", "XAUUSD_M15.csv")
+    raw_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "raw", f"{symbol}_M15.csv")
+    if not os.path.exists(raw_path):
+        raw_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "raw", "XAUUSD_M15.csv")
+
     if os.path.exists(raw_path):
         try:
             df_csv = pd.read_csv(raw_path)
@@ -969,7 +1008,13 @@ def fetch_bars(symbol: str, timeframe, count: int) -> pd.DataFrame:
                 df_csv.index = pd.to_datetime(df_csv[time_col], utc=True)
             cols = [c for c in ["open", "high", "low", "close", "tick_volume"] if c in df_csv.columns]
             if len(cols) >= 4:
-                return df_csv[cols].tail(count).copy()
+                df_res = df_csv[cols].tail(count).copy()
+                if symbol != "XAUUSD" and not os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "raw", f"{symbol}_M15.csv")):
+                    scale_map = {"EURUSD": 1.0850 / 2650.0, "GBPUSD": 1.2950 / 2650.0, "USDJPY": 155.0 / 2650.0}
+                    base_factor = scale_map.get(symbol, 1.0)
+                    for c in ["open", "high", "low", "close"]:
+                        df_res[c] = df_res[c] * base_factor
+                return df_res
         except Exception:
             pass
     return pd.DataFrame()
@@ -979,7 +1024,11 @@ def get_spread_pips(symbol: str) -> float:
     if not MT5_AVAILABLE:
         return 0.0
     info = mt5.symbol_info_tick(symbol)
-    return round((info.ask - info.bid) / PIP_SIZE, 1) if info else 0.0
+    if not info:
+        return 0.0
+    spec = SYMBOL_SPECS.get(symbol, SYMBOL_SPECS["XAUUSD"])
+    pip_sz = spec.get("pip_size", 0.10)
+    return round((info.ask - info.bid) / pip_sz, 1)
 
 
 def open_trade(symbol: str, direction: int, lot: float,
@@ -1098,21 +1147,21 @@ def partial_close(ticket: int, symbol: str, lot: float, direction: int) -> bool:
 # CANDLE CHANGE DETECTOR
 # ==============================================================================
 
-_last_candle_time = None
+_last_candle_times = {}
 
-def is_new_candle(df: pd.DataFrame) -> bool:
-    global _last_candle_time
+def is_new_candle(df: pd.DataFrame, symbol: str = "XAUUSD") -> bool:
+    global _last_candle_times
     if df is None or len(df) < 2:
         return False
     latest = df.index[-1]
-    if _last_candle_time is None or latest != _last_candle_time:
-        _last_candle_time = latest
+    if symbol not in _last_candle_times or latest != _last_candle_times[symbol]:
+        _last_candle_times[symbol] = latest
         return True
     return False
 
 
 # ==============================================================================
-# MAIN BOT
+# MAIN BOT (MULTI-PAIR QUANTUM ENGINE)
 # ==============================================================================
 
 def run_bot():
@@ -1128,9 +1177,9 @@ def run_bot():
             return
         print(f"  [Bot] MT5 connected | Account: {acct.login} | "
               f"Balance: ${acct.balance:.2f}")
-        pip_val = compute_pip_value(mt5.symbol_info(SYMBOL))
+        pip_val = compute_pip_value(mt5.symbol_info("XAUUSD"))
     else:
-        print("  [Bot] Demo mode (no MT5)")
+        print("  [Bot] Demo / Signal-only mode (No MT5 terminal required)")
         acct    = None
         pip_val = 10.0
 
@@ -1138,13 +1187,16 @@ def run_bot():
     balance_start = float(acct.balance) if acct else 50.0
     risk  = RiskEngine(account_balance=balance_start, pip_value_per_lot=pip_val)
     perf  = PerformanceEngine()
-    state = StructureState()
 
+    # Dedicated isolated state per symbol (Strict State Isolation)
+    symbol_states = {sym: StructureState() for sym in SYMBOLS}
+
+    print()
+    print(f"  [Bot] Multi-Pair Quantum Engine Active: {', '.join(SYMBOLS)}")
+    print(f"  [Bot] Strict State Isolation: Dedicated StructureState, Pip Precision & Spread Shield per pair")
     print(f"  [Bot] Tiers: BREAKOUT SWING PULLBACK TREND MICRO EXPANSION SCALP")
-    print(f"  [Bot] ATR: {ATR_MIN_SCALP}/{ATR_MIN_TREND}/{ATR_MIN_SWING} | "
-          f"ADX: {ADX_WEAK}/{ADX_STRONG} | "
-          f"Spacing: {MIN_SIGNAL_SPACING_MIN}min/direction")
-    print(f"  [Bot] Target: 15-25 signals/day | {risk.get_status()}")
+    print(f"  [Bot] Target: 15-Min Signal Cycle | Human Confluence | Dual TP (TP1/TP2)")
+    print(f"  [Bot] Risk Status: {risk.get_status()}")
     print()
 
     reconnect_attempts = 0
@@ -1163,31 +1215,17 @@ def run_bot():
                 continue
             reconnect_attempts = 0
 
-            # ── Fetch bars ────────────────────────────────────────────────────
-            df15 = fetch_bars(SYMBOL, mt5.TIMEFRAME_M15 if MT5_AVAILABLE else 16385, BARS)
-            df_h1= fetch_bars(SYMBOL, mt5.TIMEFRAME_H1  if MT5_AVAILABLE else 16408, H1_BARS)
-            df_h4= fetch_bars(SYMBOL, mt5.TIMEFRAME_H4  if MT5_AVAILABLE else 16390, H4_BARS)
-
-            if df15 is None or len(df15) < 100:
-                time.sleep(LOOP_SLEEP)
-                continue
-
-            if not is_new_candle(df15):
-                time.sleep(LOOP_SLEEP)
-                continue
-
             now     = datetime.now(tz=timezone.utc)
             session = get_session(now)
             news_ok = is_news_active(now)
-            candle_ts = str(df15.index[-1])   # UP 9: candle timestamp for dupe guard
 
             # ── Sync account ──────────────────────────────────────────────────
             if MT5_AVAILABLE and (acct := mt5.account_info()):
                 risk.sync_account(acct.balance, acct.equity)
 
-            # ── Reconcile positions ───────────────────────────────────────────
+            # ── Reconcile positions across symbols ────────────────────────────
             if MT5_AVAILABLE:
-                positions = mt5.positions_get(symbol=SYMBOL) or []
+                positions = mt5.positions_get() or []
                 mt5_ids   = {str(p.ticket) for p in positions}
                 risk.reconcile_positions(mt5_ids)
                 risk.update_floating_pnl({str(p.ticket): {"profit": p.profit}
@@ -1195,36 +1233,28 @@ def run_bot():
             else:
                 positions = []
 
-            # ── Compute features ──────────────────────────────────────────────
-            feat = compute_features(df15)
-
-            if is_bad_candle(feat):
-                print(f"  [Bot] {now.strftime('%H:%M')} Bad candle rejected "
-                      f"(rng={feat['_range']:.2f} ATR={feat['_atr_value']:.2f})")
-                time.sleep(LOOP_SLEEP)
-                continue
-
-            stable_atr = get_stable_atr(df15, feat["_atr_value"])
-            htf_bias   = compute_htf_bias(df_h1, df_h4)
-
-            # ── Manage open trades ────────────────────────────────────────────
+            # ── Manage open trades per symbol ─────────────────────────────────
             for p in positions:
                 sid     = str(p.ticket)
-                t_tier  = risk.open_trades.get(sid, {}).get("tier", "TREND")
+                t_sym   = p.symbol
+                t_data  = risk.open_trades.get(sid, {})
+                t_tier  = t_data.get("tier", "TREND")
+                spec    = SYMBOL_SPECS.get(t_sym, SYMBOL_SPECS["XAUUSD"])
+                pip_sz  = spec.get("pip_size", 0.1)
+
                 actions = risk.check_trade_management(sid, p.price_current,
-                                                       stable_atr, t_tier)
+                                                       stable_atr=0.0, tier=t_tier, symbol=t_sym)
                 if actions["force_close"]:
-                    close_position(p.ticket, SYMBOL, p.volume, p.type)
-                    pips = ((p.price_current - p.price_open) / PIP_SIZE
+                    close_position(p.ticket, t_sym, p.volume, p.type)
+                    pips = ((p.price_current - p.price_open) / pip_sz
                             if p.type == 0
-                            else (p.price_open - p.price_current) / PIP_SIZE)
-                    t_data = risk.open_trades.get(sid, {})
+                            else (p.price_open - p.price_current) / pip_sz)
                     risk.record_result(pips=pips, signal_id=sid,
                                         equity=acct.equity if acct else None)
                     perf.record_trade(
                         signal_id=sid, direction=1 if p.type==0 else -1,
-                        tier=t_data.get("tier", "TREND"), session=session,
-                        adx_value=feat["_adx"],
+                        tier=t_tier, session=session,
+                        adx_value=25.0,
                         confidence=t_data.get("confidence", 60),
                         planned_rr=t_data.get("rr", 2.0),
                         sl_pips=t_data.get("sl_pips", 15),
@@ -1235,193 +1265,268 @@ def run_bot():
                     write_management(sid, "FORCE_CLOSE")
                     continue
                 if actions["trail_sl"] > 0:
-                    modify_sl(p.ticket, actions["trail_sl"], SYMBOL)
+                    modify_sl(p.ticket, actions["trail_sl"], t_sym)
                 if actions["partial_tp"]:
-                    t_data = risk.open_trades.get(sid, {})
-                    partial_close(p.ticket, SYMBOL,
+                    partial_close(p.ticket, t_sym,
                                    t_data.get("lot", 0.01),
                                    t_data.get("direction", 1))
 
-            # ── News filter ───────────────────────────────────────────────────
+            # ── News filter check ─────────────────────────────────────────────
             if news_ok:
-                print(f"  [Bot] {now.strftime('%H:%M')} NEWS ACTIVE")
+                print(f"  [Bot] {now.strftime('%H:%M')} HIGH-IMPACT NEWS WINDOW ACTIVE")
                 time.sleep(LOOP_SLEEP)
                 continue
 
-            # ── Dynamic confidence floor (UP 10) ──────────────────────────────
-            risk_floor = risk.get_confidence_floor(CONF_BASE)
-            conf_floor = get_dynamic_conf_floor(session, risk_floor)
+            # ── Scan All Symbols with Strict State Isolation ──────────────────
+            symbols_telemetry = {}
+            candidate_signals = []
 
-            # ── Session memory + 7-tier scanner ───────────────────────────────
-            session_mem_c = get_session_memory(df15)
-            tier_signals  = scan_tiers(feat, htf_bias, session,
-                                        session_mem_c, now.hour)
+            for sym in SYMBOLS:
+                spec   = SYMBOL_SPECS.get(sym, SYMBOL_SPECS["XAUUSD"])
+                pip_sz = spec.get("pip_size", 0.10)
+                digits = spec.get("digits", 2)
+                max_sp = spec.get("max_spread", 2.5)
 
-            if not tier_signals:
-                print(f"  [Bot] {now.strftime('%H:%M')} | {session} | "
-                      f"ADX:{feat['_adx']:.0f} | ATR:{feat['_atr_value']:.2f} | "
-                      f"H1:{htf_bias['H1']}({htf_bias['H1_phase']}) | "
-                      f"{risk.get_status()}")
-                time.sleep(LOOP_SLEEP)
-                continue
+                df15 = fetch_bars(sym, mt5.TIMEFRAME_M15 if MT5_AVAILABLE else 16385, BARS)
+                df_h1= fetch_bars(sym, mt5.TIMEFRAME_H1  if MT5_AVAILABLE else 16408, H1_BARS)
+                df_h4= fetch_bars(sym, mt5.TIMEFRAME_H4  if MT5_AVAILABLE else 16390, H4_BARS)
 
-            spread_pips    = get_spread_pips(SYMBOL)
-            current_price  = feat["_close"]
-            signals_fired  = 0   # UP 6: count per candle
+                if df15 is None or len(df15) < 50:
+                    continue
 
-            # ── Signal loop ───────────────────────────────────────────────────
-            for sig in tier_signals:
-                tier       = sig["tier"]
-                trade_type = sig.get("trade_type", "SCALPING" if tier in ("SCALP", "MICRO", "BREAKOUT", "EXPANSION") else "INTRA-SWING")
-                direction  = sig["direction"]
+                candle_ts     = str(df15.index[-1])
+                feat          = compute_features(df15)
+                current_price = feat["_close"]
+                spread_pips   = get_spread_pips(sym)
+                spread_safe   = (spread_pips <= max_sp) if spread_pips > 0 else True
+                htf_bias      = compute_htf_bias(df_h1, df_h4)
+                stable_atr    = get_stable_atr(df15, feat["_atr_value"])
+                sym_state     = symbol_states[sym]
 
-                # Spacing guard (if MIN_SIGNAL_SPACING_MIN > 0)
-                last_dir_ts = _last_signal_time.get(direction)
-                if last_dir_ts and MIN_SIGNAL_SPACING_MIN > 0:
-                    elapsed = (now - last_dir_ts).total_seconds() / 60
-                    pyramiding = is_pyramiding_allowed(direction, risk)
-                    if elapsed < MIN_SIGNAL_SPACING_MIN and not pyramiding:
+                # Telemetry for this symbol
+                symbols_telemetry[sym] = {
+                    "price": round(current_price, digits),
+                    "spread_pips": spread_pips,
+                    "max_spread": max_sp,
+                    "spread_safe": spread_safe,
+                    "adx": feat["_adx"],
+                    "atr": feat["_atr_value"],
+                    "h1_bias": htf_bias.get("H1", "NEUTRAL"),
+                    "h1_phase": htf_bias.get("H1_phase", "RANGING"),
+                    "stage": sym_state.stage,
+                }
+
+                if is_bad_candle(feat):
+                    continue
+
+                # Session memory & 7-tier scanning for sym
+                session_mem_c = get_session_memory(df15)
+                tier_signals  = scan_tiers(feat, htf_bias, session, session_mem_c, now.hour, symbol=sym)
+                if not tier_signals:
+                    continue
+
+                risk_floor = risk.get_confidence_floor(CONF_BASE)
+                conf_floor = get_dynamic_conf_floor(session, risk_floor)
+
+                for sig in tier_signals:
+                    tier       = sig["tier"]
+                    trade_type = sig.get("trade_type", "SCALPING" if tier in ("SCALP", "MICRO", "BREAKOUT", "EXPANSION") else "INTRA-SWING")
+                    direction  = sig["direction"]
+
+                    # Timing guard per (sym, direction)
+                    last_dir_ts = _last_signal_time.get((sym, direction))
+                    if last_dir_ts and MIN_SIGNAL_SPACING_MIN > 0:
+                        elapsed = (now - last_dir_ts).total_seconds() / 60
+                        if elapsed < MIN_SIGNAL_SPACING_MIN and not is_pyramiding_allowed(direction, risk):
+                            continue
+
+                    # Duplicate guard per symbol & candle timestamp
+                    if is_duplicate(tier, direction, candle_ts, symbol=sym):
                         continue
 
-                # Candle timestamp duplicate guard
-                if is_duplicate(tier, direction, candle_ts):
-                    continue
-
-                # Risk check
-                allowed, risk_reason = risk.check_risk(
-                    equity=float(acct.equity) if acct else None,
-                    spread_pips=spread_pips,
-                    atr_value=feat["_atr_value"],
-                    atr_pct=feat["_atr_pct"],
-                    direction=direction,
-                )
-                if not allowed:
-                    print(f"  [Bot] RISK BLOCK ({tier}): {risk_reason}")
-                    continue
-
-                # Structure score
-                struct_score, struct_detail = get_structure_score(
-                    df=df15, current_price=current_price,
-                    direction=direction, raw_atr=feat["_atr_value"],
-                    htf_bias=htf_bias, news_active=news_ok,
-                    state=state, session=session,
-                )
-
-                # Mandatory conditions check
-                ext_sh = detect_swing_highs(df15)
-                ext_sl = detect_swing_lows(df15)
-                permitted, _ = check_mandatory_conditions(
-                    ext_sh, ext_sl, "RANGING", state, False
-                )
-                if not permitted:
-                    continue
-
-                # Stage gating: Scalping operates on immediate momentum; Intra-Swing requires trend/structure
-                if trade_type == "INTRA-SWING":
-                    tier_min = sig.get("min_stage", SEQ_BOS)
-                    if session in ("LONDON", "OVERLAP") or feat["_adx"] >= 25:
-                        tier_min = SEQ_DISPLACE
-
-                    # Allow if state permits OR if HTF trend has strong alignment with positive structure
-                    h1_dir = htf_bias.get("H1", "NEUTRAL")
-                    trend_aligned = (direction == 1 and h1_dir == "BULL") or (direction == -1 and h1_dir == "BEAR")
-                    if not state.is_trading_permitted(min_stage=tier_min) and not (trend_aligned and struct_score >= 0):
+                    # Risk Shield per symbol
+                    allowed, risk_reason = risk.check_risk(
+                        equity=float(acct.equity) if acct else None,
+                        spread_pips=spread_pips,
+                        atr_value=feat["_atr_value"],
+                        atr_pct=feat["_atr_pct"],
+                        direction=direction,
+                        symbol=sym,
+                    )
+                    if not allowed:
                         continue
 
-                # Confidence & Accuracy calculation
-                confidence = compute_confidence(
-                    direction, feat, tier, htf_bias, session, struct_score
+                    # Structure score for this symbol's state
+                    struct_score, struct_detail = get_structure_score(
+                        df=df15, current_price=current_price,
+                        direction=direction, raw_atr=feat["_atr_value"],
+                        htf_bias=htf_bias, news_active=news_ok,
+                        state=sym_state, session=session,
+                    )
+
+                    # Mandatory SMC conditions
+                    ext_sh = detect_swing_highs(df15)
+                    ext_sl = detect_swing_lows(df15)
+                    permitted, _ = check_mandatory_conditions(
+                        ext_sh, ext_sl, "RANGING", sym_state, False
+                    )
+                    if not permitted:
+                        continue
+
+                    # Stage gating: Scalping operates on immediate momentum; Intra-Swing requires trend/structure
+                    if trade_type == "INTRA-SWING":
+                        tier_min = sig.get("min_stage", SEQ_BOS)
+                        if session in ("LONDON", "OVERLAP") or feat["_adx"] >= 25:
+                            tier_min = SEQ_DISPLACE
+                        h1_dir = htf_bias.get("H1", "NEUTRAL")
+                        trend_aligned = (direction == 1 and h1_dir == "BULL") or (direction == -1 and h1_dir == "BEAR")
+                        if not sym_state.is_trading_permitted(min_stage=tier_min) and not (trend_aligned and struct_score >= 0):
+                            continue
+
+                    # Confidence & Accuracy
+                    confidence = compute_confidence(
+                        direction, feat, tier, htf_bias, session, struct_score
+                    )
+                    if confidence < (conf_floor - (6.0 if trade_type == "SCALPING" else 0.0)):
+                        continue
+
+                    accuracy, grade, reasoning = compute_accuracy_and_reasoning(
+                        direction, tier, trade_type, feat, htf_bias, session, struct_score
+                    )
+
+                    # Dual TPSL per symbol
+                    tpsl = compute_dual_tpsl(
+                        direction, current_price, tier, trade_type,
+                        stable_atr, confidence, accuracy, symbol=sym
+                    )
+
+                    equity_now = float(acct.equity) if acct else None
+                    lot = risk.get_lot_size(
+                        sl_pips=tpsl["sl_pips"], equity=equity_now,
+                        atr_pct=feat["_atr_pct"], atr_value=feat["_atr_value"],
+                        symbol=sym,
+                    )
+
+                    signal_id = make_signal_id(tier, direction, symbol=sym)
+
+                    candidate_signals.append({
+                        "symbol": sym,
+                        "direction": direction,
+                        "tier": tier,
+                        "trade_type": trade_type,
+                        "confidence": confidence,
+                        "accuracy": accuracy,
+                        "grade": grade,
+                        "reasoning": reasoning,
+                        "tpsl": tpsl,
+                        "lot": lot,
+                        "feat": feat,
+                        "signal_id": signal_id,
+                        "current_price": current_price,
+                        "session": session,
+                    })
+
+            # ── Dispatch best signals ─────────────────────────────────────────
+            grade_weight = {"A+": 4, "A": 3, "B": 2, "C": 1}
+            candidate_signals.sort(
+                key=lambda s: (grade_weight.get(s["grade"], 0), s["accuracy"], s["confidence"]),
+                reverse=True
+            )
+
+            dispatched_count = 0
+            for sig in candidate_signals[:2]:  # Allow up to 2 best high-grade signals per cycle
+                sym           = sig["symbol"]
+                direction     = sig["direction"]
+                tier          = sig["tier"]
+                trade_type    = sig["trade_type"]
+                accuracy      = sig["accuracy"]
+                grade         = sig["grade"]
+                tpsl          = sig["tpsl"]
+                lot           = sig["lot"]
+                current_price = sig["current_price"]
+                signal_id     = sig["signal_id"]
+                reasoning     = sig["reasoning"]
+
+                write_signal(
+                    direction, tier, trade_type, sig["confidence"], accuracy,
+                    grade, reasoning, tpsl, lot, sig["feat"], signal_id,
+                    current_price, session, symbol=sym
                 )
-                if confidence < (conf_floor - (6.0 if trade_type == "SCALPING" else 0.0)):
-                    continue
 
-                accuracy, grade, reasoning = compute_accuracy_and_reasoning(
-                    direction, tier, trade_type, feat, htf_bias, session, struct_score
-                )
-
-                # TPSL calibrated for Scalping vs Intra-Swing
-                tpsl = compute_tpsl(direction, current_price,
-                                     tier, trade_type, stable_atr, confidence, accuracy)
-
-                # Lot size
-                equity_now = float(acct.equity) if acct else None
-                lot = risk.get_lot_size(
-                    sl_pips=tpsl["sl_pips"], equity=equity_now,
-                    atr_pct=feat["_atr_pct"], atr_value=feat["_atr_value"],
-                )
-
-                signal_id = make_signal_id(tier, direction)
-                write_signal(direction, tier, trade_type, confidence, accuracy,
-                             grade, reasoning, tpsl, lot, feat, signal_id,
-                             current_price, session)
-
-                # Dispatch Telegram alert (if configured)
+                # Send Telegram Alert
+                dir_name = "BUY" if direction == 1 else "SELL"
                 telegram_alert_text = (
-                    f"🚀 <b>COPETRANOVAX // XAUUSD SIGNAL</b> 🚀\n\n"
-                    f"📍 <b>ACTION:</b> <code>{'BUY' if direction == 1 else 'SELL'} NOW</code>\n"
+                    f"🚀 <b>COPETRANOVAX // {sym} SIGNAL</b> 🚀\n\n"
+                    f"📍 <b>ACTION:</b> <code>{dir_name} NOW</code>\n"
                     f"🎯 <b>MODE:</b> {trade_type} ({tier})\n"
                     f"⭐ <b>ACCURACY:</b> {accuracy:.1f}% [Grade: {grade}]\n\n"
-                    f"💵 <b>ENTRY:</b> <code>{current_price:.2f}</code>\n"
-                    f"🛑 <b>STOP LOSS:</b> <code>{tpsl['sl']:.2f}</code> ({tpsl['sl_pips']} pips)\n"
-                    f"🎯 <b>TAKE PROFIT:</b> <code>{tpsl['tp']:.2f}</code> ({tpsl['tp_pips']} pips)\n"
-                    f"⚖️ <b>RISK-REWARD:</b> 1:{tpsl['rr']}\n\n"
-                    f"💡 <b>MAAGIZO:</b> Fungua trade ya {'BUY' if direction==1 else 'SELL'} kwenye Gold (XAUUSD). "
-                    f"Weka Stop Loss na Take Profit kama zilivyoandikwa hapo juu.\n\n"
+                    f"💵 <b>ENTRY:</b> <code>{current_price}</code>\n"
+                    f"🛑 <b>STOP LOSS:</b> <code>{tpsl['sl']}</code> ({tpsl['sl_pips']} pips)\n"
+                    f"🎯 <b>TAKE PROFIT 1:</b> <code>{tpsl['tp1']}</code> ({tpsl['tp1_pips']} pips) [Funga nusu ya faida]\n"
+                    f"🎯 <b>TAKE PROFIT 2:</b> <code>{tpsl['tp2']}</code> ({tpsl['tp2_pips']} pips) [Trend Runner]\n"
+                    f"⚖️ <b>RISK-REWARD:</b> 1:{tpsl['rr']} | Lot: {lot:.2f}\n\n"
+                    f"💡 <b>MAAGIZO YA KUTRADE:</b>\n"
+                    f"1. Fungua trade ya <b>{dir_name}</b> kwenye <b>{sym}</b> sasa hivi.\n"
+                    f"2. Weka Stop Loss kwa <code>{tpsl['sl']}</code>.\n"
+                    f"3. Weka Take Profit 1 kwa <code>{tpsl['tp1']}</code> (funga 50% ya lot ukifika hapa).\n"
+                    f"4. Faida ikifika +10 pips, sogeza Stop Loss iwe kwenye Entry (Risk-Free).\n\n"
                     f"🕒 <i>Time: {now.strftime('%H:%M UTC')} | Session: {session}</i>"
                 )
                 send_telegram_alert(telegram_alert_text)
 
-                dir_name = "BUY" if direction == 1 else "SELL"
                 print(
                     f"\n  ═══════════════════════════════════════════════════════════════\n"
-                    f"  [SIGNAL ALERT] {now.strftime('%H:%M UTC')} | {SYMBOL} {dir_name}\n"
+                    f"  [SIGNAL ALERT] {now.strftime('%H:%M UTC')} | {sym} {dir_name}\n"
                     f"  MODE     : {trade_type} ({tier})\n"
                     f"  ACCURACY : {accuracy:.1f}% [Grade: {grade}]\n"
-                    f"  LEVELS   : Entry {current_price:.2f} | SL {tpsl['sl']:.2f} ({tpsl['sl_pips']} pips) | TP {tpsl['tp']:.2f} ({tpsl['tp_pips']} pips)\n"
-                    f"  R:R      : {tpsl['rr']}R | Lot: {lot:.2f} | Conf: {confidence:.0f}\n"
+                    f"  ENTRY    : {current_price} | SL: {tpsl['sl']} ({tpsl['sl_pips']} pips)\n"
+                    f"  TARGETS  : TP1: {tpsl['tp1']} ({tpsl['tp1_pips']} pips) | TP2: {tpsl['tp2']} ({tpsl['tp2_pips']} pips)\n"
+                    f"  R:R      : {tpsl['rr']}R | Lot: {lot:.2f}\n"
                     f"  REASONING: {reasoning}\n"
                     f"  ═══════════════════════════════════════════════════════════════"
                 )
 
-                # Execute trade on MT5 if available
-                success, ticket = open_trade(
-                    SYMBOL, direction, lot,
-                    tpsl["sl"], tpsl["tp"], signal_id,
-                )
-                if success:
-                    ticket_id = str(ticket)
-                    risk.register_trade(
-                        signal_id=ticket_id, direction=direction,
-                        entry=current_price, sl_pips=tpsl["sl_pips"],
-                        tp_pips=tpsl["tp_pips"], tier=tier, lot=lot,
+                # MT5 execution if available
+                if MT5_AVAILABLE:
+                    success, ticket = open_trade(
+                        sym, direction, lot, tpsl["sl"], tpsl["tp2"], signal_id
                     )
-                    print(f"  [Bot] MT5 Execution Confirmed: ticket={ticket_id}")
-                else:
-                    if MT5_AVAILABLE:
-                        print(f"  [Bot] MT5 execution skipped or not filled")
-                    else:
-                        print(f"  [Bot] Signal broadcasted to files & HUD dashboard (Signal-only mode)")
+                    if success:
+                        risk.register_trade(
+                            signal_id=str(ticket), direction=direction,
+                            entry=current_price, sl_pips=tpsl["sl_pips"],
+                            tp_pips=tpsl["tp2_pips"], tier=tier, lot=lot,
+                            symbol=sym, tp1=tpsl["tp1"], tp2=tpsl["tp2"]
+                        )
+                        print(f"  [Bot] MT5 Execution Confirmed: ticket={ticket}")
 
-                _last_signal_time[direction] = now
-                signals_fired += 1
+                _last_signal_time[(sym, direction)] = now
+                dispatched_count += 1
 
-                if signals_fired >= 2:
-                    break
-
-            # ── Telemetry update for Frontend Dashboard ───────────────────────
+            # ── Telemetry Update for HUD Dashboard ────────────────────────────
             next_candle_sec = max(0, ((14 - (now.minute % 15)) * 60) + (60 - now.second))
+            top_sym = candidate_signals[0]["symbol"] if candidate_signals else "XAUUSD"
+            top_tele = symbols_telemetry.get(top_sym, {})
+
+            gold_bars = fetch_bars("XAUUSD", mt5.TIMEFRAME_M15 if MT5_AVAILABLE else 16385, BARS)
+            gold_feat = compute_features(gold_bars) if len(gold_bars) >= 50 else feat
             update_market_status_json(
-                price=current_price, session=session, htf_bias=htf_bias,
-                feat=feat, struct_score=struct_score if 'struct_score' in locals() else 0,
-                stage=state.stage, risk_status=risk.get_status(),
-                next_candle_sec=next_candle_sec
+                price=top_tele.get("price", gold_feat["_close"]),
+                session=session,
+                htf_bias={"H1": top_tele.get("h1_bias", "NEUTRAL"), "H1_phase": top_tele.get("h1_phase", "RANGING")},
+                feat=gold_feat,
+                struct_score=0,
+                stage=symbol_states[top_sym].stage,
+                risk_status=risk.get_status(),
+                next_candle_sec=next_candle_sec,
+                symbol=top_sym,
+                symbols_telemetry=symbols_telemetry
             )
 
-            # ── Status line ───────────────────────────────────────────────────
+            # Console cycle summary
             print(
                 f"  [Bot] {now.strftime('%H:%M')} | {session} | "
-                f"Price:{current_price:.2f} | ADX:{feat['_adx']:.0f} | ATR:{feat['_atr_value']:.2f} | "
-                f"H1:{htf_bias['H1']}({htf_bias['H1_phase']}) | stage={state.stage} | "
+                f"Scanned {len(SYMBOLS)} Pairs | Candidates: {len(candidate_signals)} | "
                 f"Next M15 in {next_candle_sec//60}m{next_candle_sec%60:02d}s | {risk.get_status()}"
             )
 

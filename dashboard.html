@@ -535,6 +535,97 @@
 
     .pill-buy { color: var(--green); border: 1px solid var(--green); background: rgba(0, 255, 136, 0.1); }
     .pill-sell { color: var(--red); border: 1px solid var(--red); background: rgba(255, 34, 85, 0.1); }
+
+    /* MULTI-PAIR TICKER BAR */
+    .pairs-ticker-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 900px) {
+      .pairs-ticker-bar {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .pair-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-top: 3px solid var(--cyan);
+      padding: 12px 14px;
+      backdrop-filter: blur(8px);
+      transition: all 0.3s ease;
+    }
+
+    .pair-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .pair-name {
+      font-family: var(--font-robotic);
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 1.5px;
+    }
+
+    .pair-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-left: 4px;
+      font-family: var(--font-mono);
+    }
+
+    .pair-spread-badge {
+      font-size: 9px;
+      font-family: var(--font-robotic);
+      padding: 2px 6px;
+      border-radius: 2px;
+      letter-spacing: 1px;
+    }
+
+    .badge-safe {
+      background: rgba(0, 255, 136, 0.1);
+      border: 1px solid var(--green);
+      color: var(--green);
+    }
+
+    .badge-shield {
+      background: rgba(255, 34, 85, 0.15);
+      border: 1px solid var(--red);
+      color: var(--red);
+    }
+
+    .pair-card-body {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .pair-price {
+      font-family: var(--font-robotic);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--cyan);
+      text-shadow: 0 0 8px var(--cyan-glow);
+    }
+
+    .pair-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      font-size: 11px;
+      gap: 2px;
+    }
+
+    .bias-bull { color: var(--green); }
+    .bias-bear { color: var(--red); }
+    .bias-neutral { color: var(--text-muted); }
   </style>
 </head>
 <body>
@@ -547,7 +638,7 @@
         <div class="brand-title">
           COPETRANOVA<span>X</span> // HUD
         </div>
-        <div class="brand-sub">HIGH-ACCURACY M15 QUANTUM ENGINE // DUAL MODE SCALP & SWING</div>
+        <div class="brand-sub">MULTI-PAIR QUANTUM ENGINE // DUAL MODE SCALP & SWING // STRICT ISOLATION</div>
       </div>
 
       <div class="header-telemetry">
@@ -570,6 +661,65 @@
       </div>
     </header>
 
+    <!-- MULTI-PAIR QUANTUM TICKER BAR -->
+    <div class="pairs-ticker-bar">
+      <div class="pair-card" id="ticker-XAUUSD">
+        <div class="pair-card-header">
+          <span class="pair-name">XAUUSD <span class="pair-sub">GOLD</span></span>
+          <span class="pair-spread-badge badge-safe" id="spread-badge-XAUUSD">SPREAD 1.8p [SAFE]</span>
+        </div>
+        <div class="pair-card-body">
+          <div class="pair-price" id="pair-price-XAUUSD">2650.40</div>
+          <div class="pair-meta">
+            <span id="pair-bias-XAUUSD" class="bias-bull">H1: BULL</span>
+            <span id="pair-adx-XAUUSD">ADX: 24.5</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pair-card" id="ticker-EURUSD">
+        <div class="pair-card-header">
+          <span class="pair-name">EURUSD <span class="pair-sub">EURO</span></span>
+          <span class="pair-spread-badge badge-safe" id="spread-badge-EURUSD">SPREAD 0.8p [SAFE]</span>
+        </div>
+        <div class="pair-card-body">
+          <div class="pair-price" id="pair-price-EURUSD">1.08520</div>
+          <div class="pair-meta">
+            <span id="pair-bias-EURUSD" class="bias-bull">H1: BULL</span>
+            <span id="pair-adx-EURUSD">ADX: 21.0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pair-card" id="ticker-GBPUSD">
+        <div class="pair-card-header">
+          <span class="pair-name">GBPUSD <span class="pair-sub">CABLE</span></span>
+          <span class="pair-spread-badge badge-safe" id="spread-badge-GBPUSD">SPREAD 1.1p [SAFE]</span>
+        </div>
+        <div class="pair-card-body">
+          <div class="pair-price" id="pair-price-GBPUSD">1.29480</div>
+          <div class="pair-meta">
+            <span id="pair-bias-GBPUSD" class="bias-neutral">H1: NEUTRAL</span>
+            <span id="pair-adx-GBPUSD">ADX: 19.8</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pair-card" id="ticker-USDJPY">
+        <div class="pair-card-header">
+          <span class="pair-name">USDJPY <span class="pair-sub">YEN</span></span>
+          <span class="pair-spread-badge badge-safe" id="spread-badge-USDJPY">SPREAD 1.0p [SAFE]</span>
+        </div>
+        <div class="pair-card-body">
+          <div class="pair-price" id="pair-price-USDJPY">155.320</div>
+          <div class="pair-meta">
+            <span id="pair-bias-USDJPY" class="bias-bear">H1: BEAR</span>
+            <span id="pair-adx-USDJPY">ADX: 23.2</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- MAIN GRID -->
     <div class="hud-grid">
 
@@ -580,7 +730,7 @@
             <div class="direction-badge dir-buy" id="dirBadge">BUY</div>
             <div>
               <div class="mode-tag" id="modeTag">SCALPING // TIER 5 MICRO</div>
-              <div class="signal-symbol">XAUUSD <span style="font-size:15px; color:var(--text-muted);">M15 CYCLE</span></div>
+              <div class="signal-symbol" id="signalSymbol">XAUUSD <span style="font-size:15px; color:var(--text-muted);">M15 CYCLE</span></div>
             </div>
           </div>
 
@@ -609,14 +759,20 @@
           </div>
 
           <div class="level-box tp">
-            <div class="lvl-label">Take Profit</div>
-            <div class="lvl-val" id="tpVal">2653.40</div>
-            <div class="lvl-sub" id="tpSub">+30 Pips</div>
+            <div class="lvl-label">TP1 (Quick Bank 50%)</div>
+            <div class="lvl-val" id="tp1Val">2652.40</div>
+            <div class="lvl-sub" id="tp1Sub">+20 Pips</div>
+          </div>
+
+          <div class="level-box tp" style="border-left-color: var(--cyan);">
+            <div class="lvl-label">TP2 (Runner Target)</div>
+            <div class="lvl-val" id="tp2Val">2655.40</div>
+            <div class="lvl-sub" id="tp2Sub">+50 Pips</div>
           </div>
 
           <div class="level-box rr">
             <div class="lvl-label">Risk-Reward</div>
-            <div class="lvl-val" id="rrVal">1:2.0</div>
+            <div class="lvl-val" id="rrVal">1:2.5</div>
             <div class="lvl-sub" id="lotVal">Lot: 0.05</div>
           </div>
         </div>
@@ -625,7 +781,7 @@
         <div class="human-reasoning-box">
           <div class="reason-header">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-            HUMAN TRADER REASONING & MARKET CONTEXT
+            HUMAN TRADER REASONING & CONFLUENCE
           </div>
           <div class="reason-text" id="reasoningText">
             M15 [SCALPING BUY]: Fast momentum trigger via MICRO. Confluences: H1 BULL trend aligned, full EMA 8/21/50 alignment, volume burst (1.4x). Targeting quick volatility burst with SL strictly protected below recent candle wick.
@@ -691,12 +847,14 @@
         <thead>
           <tr>
             <th>TIMESTAMP</th>
+            <th>PAIR</th>
             <th>MODE</th>
             <th>TIER</th>
             <th>DIR</th>
             <th>ENTRY</th>
             <th>SL</th>
-            <th>TP</th>
+            <th>TP1</th>
+            <th>TP2</th>
             <th>ACCURACY</th>
             <th>GRADE</th>
           </tr>
@@ -751,9 +909,41 @@
     function renderHUD(data) {
       if (!data) return;
 
+      // Update Multi-Pair Ticker Bar
+      if (data.symbols_telemetry) {
+        const st = data.symbols_telemetry;
+        for (const sym of ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY"]) {
+          const sData = st[sym];
+          if (!sData) continue;
+          const pEl = document.getElementById(`pair-price-${sym}`);
+          const bEl = document.getElementById(`pair-bias-${sym}`);
+          const aEl = document.getElementById(`pair-adx-${sym}`);
+          const spEl = document.getElementById(`spread-badge-${sym}`);
+
+          if (pEl && sData.price !== undefined) {
+            const dec = sym === "XAUUSD" ? 2 : (sym === "USDJPY" ? 3 : 5);
+            pEl.innerText = Number(sData.price).toFixed(dec);
+          }
+          if (bEl && sData.h1_bias) {
+            bEl.innerText = `H1: ${sData.h1_bias}`;
+            bEl.className = sData.h1_bias === "BULL" ? "bias-bull" : (sData.h1_bias === "BEAR" ? "bias-bear" : "bias-neutral");
+          }
+          if (aEl && sData.adx !== undefined) {
+            aEl.innerText = `ADX: ${Number(sData.adx).toFixed(1)}`;
+          }
+          if (spEl && sData.spread_pips !== undefined) {
+            const isSafe = sData.spread_safe !== false;
+            spEl.innerText = `SPREAD ${sData.spread_pips}p [${isSafe ? 'SAFE' : 'SHIELD'}]`;
+            spEl.className = `pair-spread-badge ${isSafe ? 'badge-safe' : 'badge-shield'}`;
+          }
+        }
+      }
+
       if (data.market_status) {
         const ms = data.market_status;
-        if (ms.price) document.getElementById("livePrice").innerText = ms.price.toFixed(2);
+        const curSym = ms.symbol || "XAUUSD";
+        const dec = curSym === "XAUUSD" ? 2 : (curSym === "USDJPY" ? 3 : 5);
+        if (ms.price) document.getElementById("livePrice").innerText = Number(ms.price).toFixed(dec);
         if (ms.session) document.getElementById("sessionVal").innerText = ms.session;
         if (ms.h1_bias) document.getElementById("h1Bias").innerText = `${ms.h1_bias} (${ms.h1_phase || 'ACTIVE'})`;
         if (ms.h4_bias) document.getElementById("h4Bias").innerText = ms.h4_bias;
@@ -768,25 +958,40 @@
 
       if (data.latest_signal) {
         const sig = data.latest_signal;
+        const sym = sig.symbol || 'XAUUSD';
+        const dec = sym === "XAUUSD" ? 2 : (sym === "USDJPY" ? 3 : 5);
+
         const dirBadge = document.getElementById("dirBadge");
         dirBadge.innerText = sig.direction;
         dirBadge.className = "direction-badge " + (sig.direction === "BUY" ? "dir-buy" : "dir-sell");
 
+        document.getElementById("signalSymbol").innerHTML = `${sym} <span style="font-size:15px; color:var(--text-muted);">M15 CYCLE</span>`;
         document.getElementById("modeTag").innerText = `${sig.trade_type || 'SCALPING'} // TIER ${sig.tier || 'MOMENTUM'}`;
         document.getElementById("accNumber").innerText = `${sig.accuracy ? sig.accuracy.toFixed(1) : '85.0'}%`;
         document.getElementById("accGrade").innerText = `GRADE ${sig.grade || 'A'} [CONFLUENCE]`;
         document.getElementById("accFill").style.width = `${sig.accuracy || 85}%`;
 
-        document.getElementById("entryVal").innerText = sig.entry ? sig.entry.toFixed(2) : '-';
-        document.getElementById("slVal").innerText = sig.sl ? sig.sl.toFixed(2) : '-';
-        document.getElementById("tpVal").innerText = sig.tp ? sig.tp.toFixed(2) : '-';
+        document.getElementById("entryVal").innerText = sig.entry ? Number(sig.entry).toFixed(dec) : '-';
+        document.getElementById("slVal").innerText = sig.sl ? Number(sig.sl).toFixed(dec) : '-';
+        document.getElementById("tp1Val").innerText = sig.tp1 ? Number(sig.tp1).toFixed(dec) : (sig.tp ? Number(sig.tp).toFixed(dec) : '-');
+        document.getElementById("tp2Val").innerText = sig.tp2 ? Number(sig.tp2).toFixed(dec) : (sig.tp ? Number(sig.tp).toFixed(dec) : '-');
         document.getElementById("slSub").innerText = `-${sig.sl_pips || 15} Pips`;
-        document.getElementById("tpSub").innerText = `+${sig.tp_pips || 30} Pips`;
+        document.getElementById("tp1Sub").innerText = `+${sig.tp1_pips || 20} Pips`;
+        document.getElementById("tp2Sub").innerText = `+${sig.tp2_pips || sig.tp_pips || 35} Pips`;
         document.getElementById("rrVal").innerText = `1:${sig.rr || 2.0}`;
-        document.getElementById("lotVal").innerText = `Lot: ${sig.lot ? sig.lot.toFixed(2) : '0.05'}`;
+        document.getElementById("lotVal").innerText = `Lot: ${sig.lot ? Number(sig.lot).toFixed(2) : '0.05'}`;
 
         if (sig.reasoning) {
           document.getElementById("reasoningText").innerText = sig.reasoning;
+        }
+
+        // Highlight active ticker card
+        for (const s of ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY"]) {
+          const card = document.getElementById(`ticker-${s}`);
+          if (card) {
+            if (s === sym) card.classList.add("active-signal-pair");
+            else card.classList.remove("active-signal-pair");
+          }
         }
       }
 
@@ -798,16 +1003,20 @@
           const dClass = h.direction === "BUY" ? "pill-buy" : "pill-sell";
           const tClass = (h.trade_type === "SCALPING" || h.trade_type === "SCALP") ? "badge-scalp" : "badge-swing";
           const timeFormatted = h.timestamp ? h.timestamp.substring(11, 19) + ' UTC' : '-';
+          const hSym = h.symbol || 'XAUUSD';
+          const dec = hSym === "XAUUSD" ? 2 : (hSym === "USDJPY" ? 3 : 5);
 
           tr.innerHTML = `
             <td>${timeFormatted}</td>
+            <td style="font-family:var(--font-robotic); font-weight:700; color:#fff;">${hSym}</td>
             <td><span class="type-badge ${tClass}">${h.trade_type || 'SCALPING'}</span></td>
             <td>${h.tier || 'SCALP'}</td>
             <td><span class="dir-pill ${dClass}">${h.direction}</span></td>
-            <td>${h.entry ? h.entry.toFixed(2) : '-'}</td>
-            <td style="color:var(--red);">${h.sl ? h.sl.toFixed(2) : '-'}</td>
-            <td style="color:var(--green);">${h.tp ? h.tp.toFixed(2) : '-'}</td>
-            <td style="font-family:var(--font-robotic); color:var(--cyan);">${h.accuracy ? h.accuracy.toFixed(1) : '85'}%</td>
+            <td>${h.entry ? Number(h.entry).toFixed(dec) : '-'}</td>
+            <td style="color:var(--red);">${h.sl ? Number(h.sl).toFixed(dec) : '-'}</td>
+            <td style="color:var(--gold);">${h.tp1 ? Number(h.tp1).toFixed(dec) : '-'}</td>
+            <td style="color:var(--green);">${h.tp2 ? Number(h.tp2).toFixed(dec) : (h.tp ? Number(h.tp).toFixed(dec) : '-')}</td>
+            <td style="font-family:var(--font-robotic); color:var(--cyan);">${h.accuracy ? Number(h.accuracy).toFixed(1) : '85'}%</td>
             <td style="color:var(--gold); font-weight:700;">${h.grade || 'A'}</td>
           `;
           tbody.appendChild(tr);
