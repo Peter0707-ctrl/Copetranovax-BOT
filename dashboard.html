@@ -846,9 +846,9 @@
       container.innerHTML = symbols.map(sym => {
         const sig = (cachedSignals.pair_signals && cachedSignals.pair_signals[sym]) || null;
         const isActive = sym === currentSelectedSymbol;
-        const action = sig ? (sig.action || 'STANDBY') : 'STANDBY';
+        const action = (sig && sig.action) || (sig && sig.direction ? (sig.direction + ' NOW') : 'STANDBY');
         const price = sig ? sig.entry : '--';
-        const acc = sig ? (sig.accuracy_pct || 90) + '%' : '--';
+        const acc = sig ? ((sig.accuracy_pct || sig.accuracy || 90) + '%') : '--';
 
         let badgeClass = 'action-standby';
         if (action.includes('BUY')) badgeClass = 'action-buy';
@@ -874,15 +874,15 @@
       const sig = (cachedSignals.pair_signals && cachedSignals.pair_signals[sym]) || cachedSignals.latest_signal || cachedSignals;
       if (!sig) return;
 
-      const action = sig.action || 'STANDBY';
+      const action = sig.action || (sig.direction ? (sig.direction + ' NOW') : 'STANDBY');
       const entry = sig.entry || '--';
       const sl = sig.sl || '--';
       const tp1 = sig.tp1 || sig.tp || '--';
-      const tp2 = sig.tp2 || (parseFloat(sig.tp || 0) * 1.01).toFixed(2);
-      const acc = sig.accuracy_pct || 94.5;
-      const grade = sig.accuracy_grade || 'Grade A+';
-      const style = sig.execution_style || 'M15 QUANTUM SCALPING';
-      const reason = sig.reasoning || 'Mwenendo thabiti wa soko unafuata mtiririko safi wa wanunuzi bila viashiria vya mtego.';
+      const tp2 = sig.tp2 || '--';
+      const acc = sig.accuracy_pct || sig.accuracy || 90.0;
+      const grade = sig.accuracy_grade || (sig.grade ? ('Grade ' + sig.grade) : 'Grade A');
+      const style = sig.execution_style || (sig.trade_type ? ('M15 ' + sig.trade_type) : 'M15 QUANTUM SCALPING');
+      const reason = sig.reasoning || 'Mwenendo wa soko una nguvu na mtiririko upo wazi bila viashiria vya mtego.';
 
       document.getElementById('cardSymbol').textContent = sym;
       document.getElementById('cardDesc').textContent = (SYMBOL_NAMES[sym] || sym) + ' | 15M TIMEFRAME';

@@ -76,6 +76,7 @@ from datetime import datetime, timezone, timedelta
 
 import pandas as pd
 import numpy as np
+import requests
 
 try:
     import MetaTrader5 as mt5
@@ -83,6 +84,13 @@ try:
 except ImportError:
     MT5_AVAILABLE = False
     print("[WARN] MetaTrader5 not installed -- signal-only mode")
+
+LIVE_TICKERS = {
+    "XAUUSD": "GC=F",
+    "EURUSD": "EURUSD=X",
+    "GBPUSD": "GBPUSD=X",
+    "USDJPY": "JPY=X"
+}
 
 from structure_engine import (
     StructureState,
@@ -319,18 +327,18 @@ def compute_features(df: pd.DataFrame) -> dict:
         "_range":     last_rng,
         "_body":      last_body,
         "_body_ratio":round(body_ratio, 3),
-        "_atr_value": round(float(atr.iloc[-1]), 3),
+        "_atr_value": float(atr.iloc[-1]),
         "_atr_pct":   round(atr_pct, 1),
         "_adx":       round(float(adx_val.iloc[-1]), 1),
         "_di_plus":   round(float(di_plus.iloc[-1]), 1),
         "_di_minus":  round(float(di_minus.iloc[-1]), 1),
-        "_ema_fast":  round(float(ema_fast.iloc[-1]), 3),
-        "_ema_mid":   round(float(ema_mid.iloc[-1]), 3),
-        "_ema_slow":  round(float(ema_slow.iloc[-1]), 3),
+        "_ema_fast":  round(float(ema_fast.iloc[-1]), 5),
+        "_ema_mid":   round(float(ema_mid.iloc[-1]), 5),
+        "_ema_slow":  round(float(ema_slow.iloc[-1]), 5),
         "_vol_ratio": round(vol_ratio, 2),
-        "_prev_high": round(prev_high, 2),
-        "_prev_low":  round(prev_low, 2),
-        "_avg_rng_5": round(avg_rng_5, 3),
+        "_prev_high": prev_high,
+        "_prev_low":  prev_low,
+        "_avg_rng_5": avg_rng_5,
     }
 
 
@@ -983,6 +991,7 @@ def is_duplicate(tier: str, direction: int, candle_ts: str, symbol: str = "XAUUS
 # ==============================================================================
 
 def fetch_bars(symbol: str, timeframe, count: int) -> pd.DataFrame:
+    # 1. MT5 Live Rates if connected
     if MT5_AVAILABLE:
         try:
             rates = mt5.copy_rates_from_pos(symbol, timeframe, 0, count)
@@ -993,7 +1002,32 @@ def fetch_bars(symbol: str, timeframe, count: int) -> pd.DataFrame:
         except Exception:
             pass
 
-    # Fallback to local historical dataset for simulation/signal generation
+    # 2. 100% Real Live Global Market Feed (Direct Live API)
+    ticker = LIVE_TICKERS.get(symbol)
+    if ticker:
+        try:
+            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=15m&range=5d"
+            headers = {"User-Agent": "Mozilla/5.0"}
+            r = requests.get(url, headers=headers, timeout=8)
+            if r.status_code == 200:
+                data = r.json()
+                res = data["chart"]["result"][0]
+                timestamps = res["timestamp"]
+                quotes = res["indicators"]["quote"][0]
+                df = pd.DataFrame({
+                    "open": quotes["open"],
+                    "high": quotes["high"],
+                    "low": quotes["low"],
+                    "close": quotes["close"],
+                    "tick_volume": quotes.get("volume", [100] * len(timestamps))
+                }, index=pd.to_datetime(timestamps, unit="s", utc=True))
+                df.dropna(subset=["open", "high", "low", "close"], inplace=True)
+                if len(df) >= 30:
+                    return df.tail(count).copy()
+        except Exception:
+            pass
+
+    # 3. Offline Local Dataset Fallback
     raw_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "raw", f"{symbol}_M15.csv")
     if not os.path.exists(raw_path):
         raw_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "raw", "XAUUSD_M15.csv")
@@ -1006,19 +1040,7 @@ def fetch_bars(symbol: str, timeframe, count: int) -> pd.DataFrame:
                 df_csv.index = pd.to_datetime(df_csv[time_col], utc=True)
             cols = [c for c in ["open", "high", "low", "close", "tick_volume"] if c in df_csv.columns]
             if len(cols) >= 4:
-                df_res = df_csv[cols].tail(count).copy()
-                csv_last = float(df_res["close"].iloc[-1]) if len(df_res) > 0 else 4724.0
-                real_bases = {
-                    "XAUUSD": 2654.50,
-                    "EURUSD": 1.0865,
-                    "GBPUSD": 1.2985,
-                    "USDJPY": 153.80,
-                }
-                target_base = real_bases.get(symbol, 2654.50)
-                scale_factor = target_base / csv_last if csv_last > 0 else 1.0
-                for c in ["open", "high", "low", "close"]:
-                    df_res[c] = df_res[c] * scale_factor
-                return df_res
+                return df_csv[cols].tail(count).copy()
         except Exception:
             pass
     return pd.DataFrame()
