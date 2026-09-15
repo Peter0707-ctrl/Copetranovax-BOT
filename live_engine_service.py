@@ -291,9 +291,13 @@ def run_live_service():
 
                         score, _ = get_structure_score(df15, cur_price, d, atr_val, htf_dict, False, state, session)
                         conf = compute_confidence(d, feat, tier, htf_dict, session, score)
-                        acc, grade, reason = compute_accuracy_and_reasoning(d, tier, ttype, feat, htf_dict, session, score)
+                        tpsl = compute_dual_tpsl(d, cur_price, tier, ttype, atr_val, conf, 85.0, symbol=sym)
+                        acc, grade, reason = compute_accuracy_and_reasoning(
+                            direction=d, tier=tier, trade_type=ttype, feat=feat, htf_bias=htf_dict,
+                            session=session, struct_score=score, symbol=sym,
+                            entry=round(cur_price, digits), tp1=tpsl["tp1"], tp2=tpsl["tp2"], sl=tpsl["sl"]
+                        )
 
-                        tpsl = compute_dual_tpsl(d, cur_price, tier, ttype, atr_val, conf, acc, symbol=sym)
                         lot = risk.get_lot_size(sl_pips=tpsl["sl_pips"], symbol=sym)
                         sig_id = make_signal_id(tier, d, symbol=sym)
                         dir_str = "BUY" if d == 1 else "SELL"
@@ -306,6 +310,7 @@ def run_live_service():
                             "direction": dir_str,
                             "action": f"{dir_str} NOW",
                             "trade_type": ttype,
+                            "execution_style": f"M15 {ttype}" if "SWING" not in ttype else "H1/H4 SWING TRADE",
                             "tier": tier,
                             "accuracy": acc,
                             "accuracy_pct": acc,

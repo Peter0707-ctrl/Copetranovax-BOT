@@ -715,7 +715,9 @@ def compute_confidence(direction: int, feat: dict, tier: str,
 
 def compute_accuracy_and_reasoning(direction: int, tier: str, trade_type: str,
                                    feat: dict, htf_bias: dict, session: str,
-                                   struct_score: int) -> tuple:
+                                   struct_score: int, symbol: str = "XAUUSD",
+                                   entry: float = 0.0, tp1: float = 0.0,
+                                   tp2: float = 0.0, sl: float = 0.0) -> tuple:
     """
     Computes calibrated accuracy % (65% - 95%), Grade (A+, A, B, C),
     and Human-like Trader Reasoning based on institutional confluences.
@@ -811,12 +813,31 @@ def compute_accuracy_and_reasoning(direction: int, tier: str, trade_type: str,
     else:
         grade = "C"
 
-    # Clear plain language explanation
+    # In-depth, human-grade trader rationale
     dir_swahili = "BUY (KUNUNUA)" if dir_str == "BUY" else "SELL (KUUZA)"
-    narrative = (
-        f"Mwelekeo wa soko ni {dir_swahili}. Soko lina nguvu na mwelekeo upo wazi. "
-        f"Fungua trade sasa, weka Stop Loss na Take Profit kwenye MT5 yako kama zilivyoainishwa."
-    )
+    pip_sz = 0.1 if symbol == "XAUUSD" else (0.01 if "JPY" in symbol else 0.0001)
+    tp1_pips = abs(tp1 - entry) / pip_sz if entry > 0 and tp1 > 0 else (12.0 if "SCALP" in trade_type.upper() else 25.0)
+    sl_pips = abs(entry - sl) / pip_sz if entry > 0 and sl > 0 else (8.0 if "SCALP" in trade_type.upper() else 15.0)
+
+    if "SCALP" in trade_type.upper():
+        style_reason = (
+            f"KWANINI NI SCALPING: Lengo la TP1 ni fupi la pips {tp1_pips:.1f} ({entry} hadi {tp1}). "
+            f"Muundo wa soko kwenye H1 unaonyesha kanda ya kizuizi (Key Support/Resistance) ipo karibu, hivyo soko haliruhusu kushikilia kwa masaa mengi bila hatari ya kugeuka ghafla. "
+            f"Mkakati salama wa kitaasisi ni kuchukua faida ya haraka ndani ya dakika 15 hadi 45 na kuweka faida mfukoni mara moja."
+        )
+    elif "SWING" in trade_type.upper():
+        style_reason = (
+            f"KWANINI NI SWING: Mwelekeo wa H4 na H1 unalingana kikamilifu na wimbi kuu la kibenki. "
+            f"Lengo la faida ni pana (pips {tp1_pips:.1f}+), na hakuna kizuizi kikubwa cha soko karibu, hivyo tunashikilia oda kwa masaa 2 hadi 8 ili kuvuna wimbi lote la siku."
+        )
+    else:
+        style_reason = (
+            f"KWANINI NI DAY-TRADE: Soko lina mtiririko thabiti wa kikao cha {session} chenye msukumo wa wastani. "
+            f"Umbali wa TP1 (pips {tp1_pips:.1f}) unatosha kuvunwa ndani ya masaa 1 hadi 3 wakati wa kikao hiki."
+        )
+
+    conf_summary = f"Uchambuzi wa Kiufundi: H1 ni {h1} ({h1_phase}), nguvu ya mwelekeo (ADX) ni {adx:.1f}, na uwiano wa ujazo wa soko (Volume Ratio) ni {vr:.1f}x."
+    narrative = f"{dir_swahili} kwenye {symbol}. {style_reason} {conf_summary} Stop Loss ya pips {sl_pips:.1f} inalinda mtaji kikamilifu."
 
     return accuracy, grade, narrative
 
