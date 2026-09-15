@@ -369,6 +369,78 @@ def compute_htf_bias(df_h1: pd.DataFrame, df_h4: pd.DataFrame) -> dict:
     return result
 
 
+def analyze_mtf_confluence(df15: pd.DataFrame, df_h1: pd.DataFrame, df_h4: pd.DataFrame, symbol: str = "XAUUSD") -> dict:
+    """
+    Institutional Multi-Timeframe Analysis:
+    - H4: Macro Trend & Institutional Bias (EMA50 / EMA200, Structure).
+    - H1: Swing Review (Pullback status, Key level, BOS).
+    - M15: Execution Trigger (Entry Timing, Micro momentum).
+    - Selection Rationale: Explains why these timeframes were chosen and why M15 noise is ignored.
+    """
+    h4_close = df_h4["close"] if df_h4 is not None and len(df_h4) >= 10 else df15["close"]
+    e50_h4 = float(h4_close.ewm(span=min(50, len(h4_close)), adjust=False).mean().iloc[-1])
+    e200_h4 = float(h4_close.ewm(span=min(200, len(h4_close)), adjust=False).mean().iloc[-1])
+    h4_cur = float(h4_close.iloc[-1])
+
+    h4_dir = "BULLISH" if e50_h4 >= e200_h4 else "BEARISH"
+    h4_phase = "IMPULSE (TREND ACTIVE)" if ((h4_dir == "BULLISH" and h4_cur > e50_h4) or (h4_dir == "BEARISH" and h4_cur < e50_h4)) else "PULLBACK / CORRECTION"
+    h4_reason = f"Mwelekeo wa H4 ni {h4_dir} (EMA50 ipo {'juu' if h4_dir == 'BULLISH' else 'chini'} ya EMA200). Soko lipo katika awamu ya {h4_phase}."
+
+    h1_close = df_h1["close"] if df_h1 is not None and len(df_h1) >= 10 else df15["close"]
+    e20_h1 = float(h1_close.ewm(span=min(20, len(h1_close)), adjust=False).mean().iloc[-1])
+    e50_h1 = float(h1_close.ewm(span=min(50, len(h1_close)), adjust=False).mean().iloc[-1])
+    h1_cur = float(h1_close.iloc[-1])
+
+    h1_dir = "BULLISH" if e20_h1 >= e50_h1 else "BEARISH"
+    h1_swing_status = "TREND ALIGNED" if h1_dir == h4_dir else "COUNTER-TREND PULLBACK"
+    h1_reason = f"H1 Swing Review: Muundo wa H1 ni {h1_dir}. {'Wimbi limeungana kikamilifu na H4' if h1_dir == h4_dir else 'Soko linarejea (Pullback) kwenye kanda muhimu kabla ya kuendelea na trend'}."
+
+    m15_close = df15["close"]
+    e9_m15 = float(m15_close.ewm(span=9, adjust=False).mean().iloc[-1])
+    e21_m15 = float(m15_close.ewm(span=21, adjust=False).mean().iloc[-1])
+    m15_dir = "BUY" if e9_m15 >= e21_m15 else "SELL"
+    m15_reason = f"M15 Execution: Mshumaa wa M15 umethibitisha trigger ya kuingilia ({m15_dir}). Timeframe hii inatumika tu kubana Stop Loss ndogo na Risk-Reward bora, sio kugeuza mwelekeo wa H1/H4."
+
+    confluence_count = (1 if (h4_dir == "BULLISH" and m15_dir == "BUY") or (h4_dir == "BEARISH" and m15_dir == "SELL") else 0) + \
+                       (1 if (h1_dir == "BULLISH" and m15_dir == "BUY") or (h1_dir == "BEARISH" and m15_dir == "SELL") else 0) + 1
+    confluence_score = f"{confluence_count}/3"
+
+    rationale = (
+        f"Uteuzi wa Timeframe: H4 na H1 zimechaguliwa kama mwongozo mkuu wa Swing (Macro Trend na Swing Review) ili kulinda mtaji dhidi ya kelele za soko. "
+        f"M15 imechaguliwa kama Entry Timing Trigger pekee ili kupata Stop Loss ndogo na Risk:Reward kubwa. "
+        f"Mishumaa midogo ya M15 inayorudi nyuma katikati ya safari inachukuliwa kama pullback ya kawaida na hairuhusiwi kubadilisha trade (Anti-Noise Discipline)."
+    )
+
+    digits = 4 if "USD" in symbol and symbol != "XAUUSD" else 2
+    return {
+        "h4": {
+            "timeframe": "H4 (Masaa 4)",
+            "direction": h4_dir,
+            "phase": h4_phase,
+            "price": round(h4_cur, digits),
+            "ema50": round(e50_h4, digits),
+            "ema200": round(e200_h4, digits),
+            "reason": h4_reason
+        },
+        "h1": {
+            "timeframe": "H1 (Saa 1)",
+            "direction": h1_dir,
+            "swing_status": h1_swing_status,
+            "price": round(h1_cur, digits),
+            "ema20": round(e20_h1, digits),
+            "ema50": round(e50_h1, digits),
+            "reason": h1_reason
+        },
+        "m15": {
+            "timeframe": "M15 (Dakika 15)",
+            "trigger": f"{m15_dir} TRIGGER CONFIRMED",
+            "reason": m15_reason
+        },
+        "confluence_score": confluence_score,
+        "selection_rationale": rationale
+    }
+
+
 # ==============================================================================
 # BAD CANDLE GATE
 # ==============================================================================
@@ -1006,7 +1078,21 @@ def fetch_bars(symbol: str, timeframe, count: int) -> pd.DataFrame:
     ticker = LIVE_TICKERS.get(symbol)
     if ticker:
         try:
-            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=15m&range=5d"
+            tf_str = str(timeframe).lower()
+            if "1h" in tf_str or timeframe == 16408 or (MT5_AVAILABLE and timeframe == getattr(mt5, "TIMEFRAME_H1", 16408)):
+                interval = "1h"
+                q_range = "1mo"
+                is_4h = False
+            elif "4h" in tf_str or timeframe == 16390 or (MT5_AVAILABLE and timeframe == getattr(mt5, "TIMEFRAME_H4", 16390)):
+                interval = "1h"
+                q_range = "2mo"
+                is_4h = True
+            else:
+                interval = "15m"
+                q_range = "5d"
+                is_4h = False
+
+            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval={interval}&range={q_range}"
             headers = {"User-Agent": "Mozilla/5.0"}
             r = requests.get(url, headers=headers, timeout=8)
             if r.status_code == 200:
@@ -1022,7 +1108,11 @@ def fetch_bars(symbol: str, timeframe, count: int) -> pd.DataFrame:
                     "tick_volume": quotes.get("volume", [100] * len(timestamps))
                 }, index=pd.to_datetime(timestamps, unit="s", utc=True))
                 df.dropna(subset=["open", "high", "low", "close"], inplace=True)
-                if len(df) >= 30:
+                if is_4h and len(df) >= 4:
+                    df = df.resample("4h").agg({
+                        "open": "first", "high": "max", "low": "min", "close": "last", "tick_volume": "sum"
+                    }).dropna()
+                if len(df) >= 10:
                     return df.tail(count).copy()
         except Exception:
             pass

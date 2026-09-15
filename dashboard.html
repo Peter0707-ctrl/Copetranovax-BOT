@@ -601,7 +601,255 @@
       .main-grid { grid-template-columns: 1fr; }
       .levels-grid { grid-template-columns: 1fr; }
     }
-  </style>
+  
+    /* Trade Lifecycle & Anti-Noise Card */
+    .trade-lifecycle-card {
+      background: rgba(13, 18, 29, 0.95);
+      border: 1px solid rgba(0, 240, 118, 0.35);
+      border-radius: 14px;
+      padding: 18px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 4px 20px rgba(0, 240, 118, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .trade-lifecycle-card.locked-sell {
+      border-color: rgba(255, 51, 102, 0.35);
+      box-shadow: 0 4px 20px rgba(255, 51, 102, 0.08);
+    }
+
+    .lifecycle-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .lifecycle-badge {
+      font-family: var(--font-orbitron);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      text-transform: uppercase;
+      background: rgba(0, 240, 118, 0.12);
+      color: var(--neon-green);
+      border: 1px solid rgba(0, 240, 118, 0.4);
+    }
+
+    .lifecycle-badge.badge-locked-sell {
+      background: rgba(255, 51, 102, 0.12);
+      color: var(--neon-red);
+      border-color: rgba(255, 51, 102, 0.4);
+    }
+
+    .lifecycle-pnl {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: rgba(0, 216, 246, 0.12);
+      color: var(--neon-cyan);
+      border: 1px solid rgba(0, 216, 246, 0.4);
+    }
+
+    .lifecycle-pnl.pnl-positive {
+      color: var(--neon-green);
+      border-color: rgba(0, 240, 118, 0.4);
+      background: rgba(0, 240, 118, 0.12);
+    }
+
+    .lifecycle-pnl.pnl-negative {
+      color: var(--neon-red);
+      border-color: rgba(255, 51, 102, 0.4);
+      background: rgba(255, 51, 102, 0.12);
+    }
+
+    .lifecycle-msg {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #e2e8f0;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 10px 14px;
+      border-radius: 8px;
+      border-left: 3px solid var(--neon-cyan);
+    }
+
+    .milestones-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .milestone-item {
+      background: rgba(20, 26, 40, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      position: relative;
+    }
+
+    .milestone-item.ms-active {
+      border-color: rgba(0, 240, 118, 0.5);
+      background: rgba(0, 240, 118, 0.05);
+    }
+
+    .ms-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    .ms-val {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    /* Multi-Timeframe Matrix (H4, H1, M15) */
+    .mtf-section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .mtf-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 12px;
+    }
+
+    .mtf-title {
+      font-family: var(--font-orbitron);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+    }
+
+    .mtf-score-badge {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: rgba(255, 190, 26, 0.12);
+      color: var(--neon-gold);
+      border: 1px solid rgba(255, 190, 26, 0.4);
+    }
+
+    .mtf-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .mtf-card {
+      background: rgba(20, 26, 40, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .mtf-card:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .mtf-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .mtf-tf-tag {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .mtf-dir-tag {
+      font-family: var(--font-orbitron);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .dir-bull { background: rgba(0, 240, 118, 0.15); color: var(--neon-green); border: 1px solid rgba(0, 240, 118, 0.3); }
+    .dir-bear { background: rgba(255, 51, 102, 0.15); color: var(--neon-red); border: 1px solid rgba(255, 51, 102, 0.3); }
+
+    .mtf-phase {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .mtf-reason {
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--text-sub);
+    }
+
+    .mtf-rationale-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(0, 216, 246, 0.2);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .rationale-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+    }
+
+    .rationale-text {
+      font-size: 12px;
+      line-height: 1.6;
+      color: #cbd5e1;
+    }
+
+    @media (max-width: 900px) {
+      .milestones-row { grid-template-columns: repeat(2, 1fr); }
+      .mtf-grid { grid-template-columns: 1fr; }
+    }
+
+</style>
 </head>
 <body>
 
@@ -641,6 +889,36 @@
           </div>
           <div class="signal-action-badge badge-buy" id="cardActionBadge">
             BUY NOW
+          </div>
+        </div>
+
+        
+        <!-- Active Trade Lifecycle & Anti-Noise Lock Banner -->
+        <div class="trade-lifecycle-card" id="tradeLifecycleCard">
+          <div class="lifecycle-top">
+            <div class="lifecycle-badge" id="lifecycleBadge">TRADE IPO WAZI (LOCKED)</div>
+            <div class="lifecycle-pnl" id="lifecyclePnl">PNL: +0.0 PIPS</div>
+          </div>
+          <div class="lifecycle-msg" id="lifecycleMsg">
+            Trade hii imefungwa (Locked). Mtiririko unafuata muundo wa H4/H1; kelele za mshumaa wa M15 kurudi nyuma haziruhusiwi kubadilisha trade.
+          </div>
+          <div class="milestones-row">
+            <div class="milestone-item ms-active" id="msEntry">
+              <span class="ms-label">1. Entry Price</span>
+              <span class="ms-val" id="msEntryVal">--</span>
+            </div>
+            <div class="milestone-item" id="msBe">
+              <span class="ms-label">2. Breakeven (+10p)</span>
+              <span class="ms-val" id="msBeVal">Inasubiri</span>
+            </div>
+            <div class="milestone-item" id="msTp1">
+              <span class="ms-label">3. TP1 (Funga 50%)</span>
+              <span class="ms-val" id="msTp1Val">--</span>
+            </div>
+            <div class="milestone-item" id="msTp2">
+              <span class="ms-label">4. TP2 (Runner)</span>
+              <span class="ms-val" id="msTp2Val">--</span>
+            </div>
           </div>
         </div>
 
@@ -696,6 +974,51 @@
             </div>
           </div>
         </div>
+      
+        <!-- Multi-Timeframe Matrix (H4, H1, M15) & Swing Review -->
+        <div class="mtf-section">
+          <div class="mtf-header">
+            <div class="mtf-title">MAPITIO YA SWING NA TIMEFRAME CONFLUENCE (H4 / H1 / M15)</div>
+            <div class="mtf-score-badge" id="mtfScoreBadge">CONFLUENCE: 3/3</div>
+          </div>
+          <div class="mtf-grid">
+            <!-- H4 Card -->
+            <div class="mtf-card">
+              <div class="mtf-card-top">
+                <span class="mtf-tf-tag">H4 (MASAA 4)</span>
+                <span class="mtf-dir-tag dir-bear" id="h4DirTag">BEARISH</span>
+              </div>
+              <div class="mtf-phase" id="h4Phase">MACRO TREND</div>
+              <div class="mtf-reason" id="h4Reason">Taasisi zinafuata mwelekeo mkubwa wa siku.</div>
+            </div>
+            <!-- H1 Card -->
+            <div class="mtf-card">
+              <div class="mtf-card-top">
+                <span class="mtf-tf-tag">H1 (SAA 1)</span>
+                <span class="mtf-dir-tag dir-bear" id="h1DirTag">BEARISH</span>
+              </div>
+              <div class="mtf-phase" id="h1Phase">SWING REVIEW</div>
+              <div class="mtf-reason" id="h1Reason">H1 imekamilisha pullback na kuungana na H4.</div>
+            </div>
+            <!-- M15 Card -->
+            <div class="mtf-card">
+              <div class="mtf-card-top">
+                <span class="mtf-tf-tag">M15 (DAKIKA 15)</span>
+                <span class="mtf-dir-tag dir-bear" id="m15DirTag">TRIGGER CONFIRMED</span>
+              </div>
+              <div class="mtf-phase" id="m15Phase">TIMING EXECUTION</div>
+              <div class="mtf-reason" id="m15Reason">Inatumika tu kubana Stop Loss ndogo na Risk:Reward kubwa.</div>
+            </div>
+          </div>
+          <!-- Timeframe Selection Rationale Box -->
+          <div class="mtf-rationale-card">
+            <div class="rationale-title">KWANINI TIMEFRAME HIZI ZIMECHAGULIWA (SELECTION RATIONALE):</div>
+            <div class="rationale-text" id="mtfRationaleText">
+              H4 na H1 zimechaguliwa kama mwongozo mkuu wa Swing ili kulinda mtaji dhidi ya kelele za soko. M15 imechaguliwa kama Entry Timing Trigger pekee ili kupata Stop Loss ndogo na Risk-Reward kubwa. Mishumaa midogo ya M15 inayorudi nyuma katikati ya safari inachukuliwa kama pullback ya kawaida na hairuhusiwi kubadilisha trade (Anti-Noise Discipline).
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- Right Column: Protection Shield & Timing -->
@@ -887,6 +1210,91 @@
       document.getElementById('sideAccuracy').textContent = isMarketOpen ? `${acc}% (${grade})` : 'STANDBY';
       document.getElementById('sideStyle').textContent = isMarketOpen ? style : 'MARKET CLOSED';
       document.getElementById('signalReasoning').textContent = reason;
+
+      
+      // Update Lifecycle Card
+      const isLocked = (sig.state === 'IN_TRADE');
+      const lBadge = document.getElementById('lifecycleBadge');
+      const lPnl = document.getElementById('lifecyclePnl');
+      const lMsg = document.getElementById('lifecycleMsg');
+      const lCard = document.getElementById('tradeLifecycleCard');
+
+      if (lBadge && lPnl && lMsg) {
+        const pnlPips = sig.pnl_pips !== undefined ? sig.pnl_pips : 0.0;
+        const pnlPrefix = pnlPips >= 0 ? '+' : '';
+        lPnl.textContent = `LIVE PNL: ${pnlPrefix}${pnlPips} PIPS`;
+        lPnl.className = 'lifecycle-pnl ' + (pnlPips >= 0 ? 'pnl-positive' : 'pnl-negative');
+
+        if (isLocked) {
+          lBadge.textContent = `TRADE IPO WAZI (${sig.direction} LOCKED)`;
+          lBadge.className = 'lifecycle-badge ' + (sig.direction === 'BUY' ? '' : 'badge-locked-sell');
+          if (lCard) lCard.className = 'trade-lifecycle-card ' + (sig.direction === 'BUY' ? '' : 'locked-sell');
+          lMsg.textContent = sig.lifecycle_msg || 'Trade hii imefungwa (Locked). Mtiririko unafuata muundo wa H4/H1; kelele za mshumaa wa M15 haziruhusiwi kubadili oda.';
+        } else {
+          lBadge.textContent = 'SCANNING FOR SETUP';
+          lBadge.className = 'lifecycle-badge';
+          if (lCard) lCard.className = 'trade-lifecycle-card';
+          lMsg.textContent = 'Hakuna trade iliyo wazi kwa sasa kwenye pair hii. Bot inasubiri mshumaa wa M15 ufungwe ukiwa unakubaliana na H4/H1.';
+        }
+
+        document.getElementById('msEntryVal').textContent = entry;
+        document.getElementById('msTp1Val').textContent = tp1;
+        document.getElementById('msTp2Val').textContent = tp2;
+
+        const msBe = document.getElementById('msBe');
+        const msTp1 = document.getElementById('msTp1');
+        const msTp2 = document.getElementById('msTp2');
+        if (msBe) {
+          if (sig.breakeven_reached) {
+            msBe.classList.add('ms-active');
+            document.getElementById('msBeVal').textContent = 'SL = Entry (Risk-Free)';
+            document.getElementById('msBeVal').style.color = 'var(--neon-green)';
+          } else {
+            msBe.classList.remove('ms-active');
+            document.getElementById('msBeVal').textContent = 'Inasubiri (+10p)';
+            document.getElementById('msBeVal').style.color = '#fff';
+          }
+        }
+        if (msTp1) {
+          if (sig.tp1_reached) {
+            msTp1.classList.add('ms-active');
+            msTp1.style.borderColor = 'var(--neon-green)';
+          } else {
+            msTp1.classList.remove('ms-active');
+            msTp1.style.borderColor = '';
+          }
+        }
+      }
+
+      // Update Multi-Timeframe Matrix
+      const mtf = sig.mtf_analysis || {};
+      if (mtf.h4 && mtf.h1 && mtf.m15) {
+        document.getElementById('mtfScoreBadge').textContent = `CONFLUENCE: ${mtf.confluence_score || '3/3'}`;
+
+        const h4Tag = document.getElementById('h4DirTag');
+        if (h4Tag) {
+          h4Tag.textContent = mtf.h4.direction;
+          h4Tag.className = 'mtf-dir-tag ' + (mtf.h4.direction === 'BULLISH' ? 'dir-bull' : 'dir-bear');
+        }
+        document.getElementById('h4Phase').textContent = mtf.h4.phase || 'MACRO TREND';
+        document.getElementById('h4Reason').textContent = mtf.h4.reason || '';
+
+        const h1Tag = document.getElementById('h1DirTag');
+        if (h1Tag) {
+          h1Tag.textContent = mtf.h1.direction;
+          h1Tag.className = 'mtf-dir-tag ' + (mtf.h1.direction === 'BULLISH' ? 'dir-bull' : 'dir-bear');
+        }
+        document.getElementById('h1Phase').textContent = mtf.h1.swing_status || 'SWING REVIEW';
+        document.getElementById('h1Reason').textContent = mtf.h1.reason || '';
+
+        const m15Tag = document.getElementById('m15DirTag');
+        if (m15Tag) {
+          m15Tag.textContent = mtf.m15.trigger || 'TRIGGER CONFIRMED';
+          m15Tag.className = 'mtf-dir-tag ' + (mtf.m15.trigger.includes('BUY') ? 'dir-bull' : 'dir-bear');
+        }
+        document.getElementById('m15Reason').textContent = mtf.m15.reason || '';
+        document.getElementById('mtfRationaleText').textContent = mtf.selection_rationale || '';
+      }
 
       // Hold Guidance Logic
       const rawTradeType = (sig.trade_type || sig.tier || '').toUpperCase();
