@@ -889,7 +889,9 @@
       document.getElementById('signalReasoning').textContent = reason;
 
       // Hold Guidance Logic
-      const isSwing = (sig.trade_type && sig.trade_type.includes('SWING')) || (sig.tier && sig.tier.includes('SWING')) || (sym === 'XAUUSD');
+      const rawTradeType = (sig.trade_type || sig.tier || '').toUpperCase();
+      const isSwing = rawTradeType.includes('SWING');
+      const isScalp = rawTradeType.includes('SCALP') || rawTradeType.includes('MICRO') || rawTradeType.includes('BREAKOUT') || rawTradeType.includes('EXPANSION');
       const typeBadge = document.getElementById('holdTypeBadge');
       const durPill = document.getElementById('holdDurationPill');
       const instrText = document.getElementById('holdInstructionText');
@@ -907,25 +909,35 @@
           instrText.innerHTML = '<strong>' + marketStatusMsg + '</strong>. Soko la kimataifa limefungwa kwa sasa au liko kwenye mapumziko ya kibenki. Bot haitoi signals mpya hadi soko lifunguliwe.';
         } else if (isSwing) {
           typeBadge.textContent = 'SWING TRADE';
-          typeBadge.style.color = 'var(--neon-cyan)';
-          typeBadge.style.borderColor = 'rgba(0, 216, 246, 0.4)';
-          typeBadge.style.background = 'rgba(0, 216, 246, 0.12)';
-          durPill.textContent = (currentSession === 'ASIA') ? 'ASIA: UTULIVU WA USIKU (HOLD 2-8h)' : 'MUDA WA KUSHIKILIA: MASAA 2 HADI 8 (HOLD)';
+          typeBadge.style.color = 'var(--neon-gold)';
+          typeBadge.style.borderColor = 'rgba(255, 190, 26, 0.4)';
+          typeBadge.style.background = 'rgba(255, 190, 26, 0.12)';
+          durPill.textContent = 'MUDA WA KUSHIKILIA: MASAA 2 HADI 8 (HOLD)';
           durPill.style.color = 'var(--neon-gold)';
           durPill.style.borderColor = 'rgba(255, 190, 26, 0.4)';
           durPill.style.background = 'rgba(255, 190, 26, 0.12)';
-          const sessionNote = (currentSession === 'ASIA') ? '<em>(Kumbuka: Kwa sasa ni Asian Session usiku, soko linatembea polepole kusubiri London ifunguliwe saa 10:00 Asubuhi).</em> ' : '';
-          instrText.innerHTML = sessionNote + 'Hii ni <strong>SWING TRADE</strong>. <strong>Shikilia oda yako (HOLD)</strong> kwa uvumilivu. Ikifika <strong>TP1: ' + tp1 + '</strong>, funga 50% ya faida na u-HOLD nusu iliyobaki kuelekea <strong>TP2: ' + tp2 + '</strong> ukiwa umesogeza Stop Loss kwenye Entry (Risk-Free).';
-        } else {
+          instrText.innerHTML = 'Hii ni <strong>SWING TRADE</strong> ya kufuata wimbi kubwa la siku kwenye <strong>' + sym + '</strong>. <strong>Shikilia oda yako (HOLD)</strong> kwa uvumilivu. Ikifika <strong>TP1: ' + tp1 + '</strong>, funga 50% ya faida na u-HOLD nusu iliyobaki kuelekea <strong>TP2: ' + tp2 + '</strong> ukiwa umesogeza Stop Loss kwenye Entry (Risk-Free).';
+        } else if (isScalp) {
           typeBadge.textContent = 'QUICK SCALPING';
           typeBadge.style.color = 'var(--neon-green)';
           typeBadge.style.borderColor = 'rgba(0, 240, 118, 0.4)';
           typeBadge.style.background = 'rgba(0, 240, 118, 0.12)';
           durPill.textContent = 'MUDA WA KUSHIKILIA: DAKIKA 15 HADI 45';
+          durPill.style.color = 'var(--neon-green)';
+          durPill.style.borderColor = 'rgba(0, 240, 118, 0.4)';
+          durPill.style.background = 'rgba(0, 240, 118, 0.12)';
+          instrText.innerHTML = 'Hii ni <strong>SCALPING TRADE</strong> ya haraka kwenye <strong>' + sym + '</strong>. <strong>Shikilia (HOLD) kwa dakika 15 hadi 45 tu</strong>. Punde <strong>TP1: ' + tp1 + '</strong> inapofikiwa, funga faida ya haraka bila kukaa masaa mengi sokoni.';
+        } else {
+          // DAY-TRADE / TREND / INTRADAY
+          typeBadge.textContent = 'DAY TRADE (INTRADAY)';
+          typeBadge.style.color = 'var(--neon-cyan)';
+          typeBadge.style.borderColor = 'rgba(0, 216, 246, 0.4)';
+          typeBadge.style.background = 'rgba(0, 216, 246, 0.12)';
+          durPill.textContent = 'MUDA WA KUSHIKILIA: MASAA 1 HADI 3';
           durPill.style.color = 'var(--neon-cyan)';
           durPill.style.borderColor = 'rgba(0, 216, 246, 0.4)';
           durPill.style.background = 'rgba(0, 216, 246, 0.12)';
-          instrText.innerHTML = 'Hii ni <strong>SCALPING TRADE</strong> ya haraka. <strong>Shikilia (HOLD) kwa dakika 15 hadi 45 tu</strong>. Punde <strong>TP1: ' + tp1 + '</strong> inapofikiwa, funga faida ya haraka bila kusubiri masaa mengi sokoni.';
+          instrText.innerHTML = 'Hii ni <strong>DAY TRADE</strong> ya kikao cha <strong>' + currentSession + '</strong> kwenye <strong>' + sym + '</strong>. <strong>Shikilia (HOLD) kwa masaa 1 hadi 3</strong>. Mwelekeo wa soko una nguvu; ikifika <strong>TP1: ' + tp1 + '</strong> funga 50% ya faida na sogeza Stop Loss kwenye Entry kulinda mtaji.';
         }
       }
     }

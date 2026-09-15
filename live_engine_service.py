@@ -2,10 +2,11 @@
 CopetraNova -- live_engine_service.py
 ======================================
 Continuous real-time market engine with:
-1. Strict Market Open / Market Closed detection (weekend, daily rollover, frozen feed).
-2. Strict M15 Candle Close Discipline (signals fire ONLY on new candle close, not every 30s).
-3. Plain Session Classification (Asia quiet hours vs London/NY high liquidity).
+1. Strict Market Open / Market Closed detection.
+2. Strict M15 Candle Close Discipline.
+3. Session Classification (Asia quiet hours vs London/NY high liquidity).
 4. 100% Real Live Market Feeds (Zero dummy data).
+5. Per-pair dedicated signals and telemetry (XAUUSD, EURUSD, GBPUSD, USDJPY).
 
 ZERO EMOJIS strictly enforced.
 """
@@ -24,7 +25,7 @@ from live_bot import (
     SYMBOLS, fetch_bars, compute_features, get_session,
     scan_tiers, compute_confidence, compute_accuracy_and_reasoning,
     compute_dual_tpsl, write_signal, update_market_status_json,
-    make_signal_id, MT5_AVAILABLE
+    make_signal_id, MT5_AVAILABLE, get_spread_pips, SIGNALS_JSON
 )
 from structure_engine import StructureState, get_structure_score
 from risk_engine import RiskEngine, SYMBOL_SPECS
@@ -52,12 +53,12 @@ def check_market_open(symbol: str, df: pd.DataFrame = None, dt: datetime = None)
     if (h == 21 and m >= 55) or (h == 22 and m < 15):
         return False, "MAPUMZIKO YA SOKO (Daily Bank Rollover Break 21:55 - 22:15 UTC)"
 
-    # 3. Feed Freshness Check (If latest candle is older than 35 minutes)
+    # 3. Feed Freshness Check (If latest candle is older than 45 minutes)
     if df is not None and len(df) > 0:
         latest_ts = df.index[-1]
         candle_age = (now - latest_ts).total_seconds() / 60
-        if candle_age > 35:
-            return False, f"SOKO LIMEGANDA (Hakuna mishumaa mipya kwa dakika {int(candle_age)})"
+        if candle_age > 45:
+            return False, f"SOKO LIMEGANDA (Hakuna data mpya kwa dakika {int(candle_age)})"
 
     return True, "SOKO LIKO WAZI"
 
@@ -65,7 +66,7 @@ def check_market_open(symbol: str, df: pd.DataFrame = None, dt: datetime = None)
 def get_session_info(now_dt: datetime) -> tuple:
     h = now_dt.hour
     if h >= 22 or h < 7:
-        return "ASIA", "ASIA SESSION (TOKYO / SYDNEY) - Soko linatembea polepole (Low Volatility). London itafunguliwa saa 10:00 Asubuhi EAT."
+        return "ASIA", "ASIA SESSION (TOKYO / SYDNEY) - Soko linatembea polepole (Low Volatility)."
     elif 7 <= h < 13:
         return "LONDON", "LONDON SESSION - Peak Institutional Liquidity & Volatility."
     elif 13 <= h < 17:
@@ -74,12 +75,39 @@ def get_session_info(now_dt: datetime) -> tuple:
         return "NEW YORK", "NEW YORK SESSION - Trend Continuations & US News Releases."
 
 
+def get_htf_bias_from_m15(df15: pd.DataFrame) -> dict:
+    close = df15["close"]
+    ema80 = close.ewm(span=min(80, len(close)), adjust=False).mean()
+    ema200 = close.ewm(span=min(200, len(close)), adjust=False).mean()
+    
+    last_cl = float(close.iloc[-1])
+    e80 = float(ema80.iloc[-1])
+    e200 = float(ema200.iloc[-1])
+
+    if e80 > e200 * 1.0003:
+        direction = "BULL"
+        phase = "PULLBACK" if last_cl < e80 else "IMPULSE"
+    elif e80 < e200 * 0.9997:
+        direction = "BEAR"
+        phase = "PULLBACK" if last_cl > e80 else "IMPULSE"
+    else:
+        direction = "NEUTRAL"
+        phase = "RANGING"
+
+    return {
+        "H1": direction,
+        "H1_phase": phase,
+        "H4": direction,
+        "H4_phase": phase
+    }
+
+
 def run_live_service():
-    print("=" * 65)
-    print("COPETRANOVAX // REAL LIVE ENGINE SERVICE INITIALIZED")
-    print("Monitored Pairs: XAUUSD, EURUSD, GBPUSD, USDJPY")
-    print(f"Poll Interval: Every {POLL_INTERVAL_SECONDS}s | Candle Gate: M15 Close Only")
-    print("=" * 65)
+    print("=" * 65, flush=True)
+    print("COPETRANOVAX // REAL LIVE ENGINE SERVICE INITIALIZED", flush=True)
+    print("Monitored Pairs: XAUUSD, EURUSD, GBPUSD, USDJPY", flush=True)
+    print(f"Poll Interval: Every {POLL_INTERVAL_SECONDS}s | Candle Gate: M15 Close Only", flush=True)
+    print("=" * 65, flush=True)
 
     risk = RiskEngine(account_balance=100.0)
     symbol_states = {sym: StructureState() for sym in SYMBOLS}
@@ -90,16 +118,24 @@ def run_live_service():
             now_dt = datetime.now(tz=timezone.utc)
             session, session_desc = get_session_info(now_dt)
             symbols_telemetry = {}
-            candidate_signals = []
+            pair_signals = {}
+
+            existing_data = {}
+            if os.path.exists(SIGNALS_JSON):
+                try:
+                    with open(SIGNALS_JSON, "r", encoding="utf-8") as f:
+                        existing_data = json.load(f)
+                        pair_signals = existing_data.get("pair_signals", {})
+                except Exception:
+                    pass
 
             for sym in SYMBOLS:
                 spec = SYMBOL_SPECS[sym]
                 digits = spec["digits"]
                 pip_sz = spec["pip_size"]
 
-                # Fetch real live M15 bars
                 df15 = fetch_bars(sym, None, 200)
-                if len(df15) < 30:
+                if df15 is None or len(df15) < 30:
                     continue
 
                 cur_price = float(df15["close"].iloc[-1])
@@ -116,17 +152,8 @@ def run_live_service():
                 feat = compute_features(df15)
                 feat["_atr_value"] = atr_val
                 state = symbol_states[sym]
+                htf_bias = get_htf_bias_from_m15(df15)
 
-                # Dynamic HTF Bias from resampled bars
-                df_h1 = df15.resample("1h").agg({
-                    "open": "first", "high": "max", "low": "min", "close": "last"
-                }).dropna()
-                df_h4 = df15.resample("4h").agg({
-                    "open": "first", "high": "max", "low": "min", "close": "last"
-                }).dropna()
-                htf_bias = compute_htf_bias(df_h1, df_h4)
-
-                # Real Spread
                 if MT5_AVAILABLE:
                     spread_pips = get_spread_pips(sym)
                 else:
@@ -139,7 +166,7 @@ def run_live_service():
                     "spread_pips": spread_pips,
                     "max_spread": spec["max_spread"],
                     "spread_safe": spread_pips <= spec["max_spread"],
-                    "adx": feat["_adx"],
+                    "adx": round(feat.get("_adx", 20.0), 1),
                     "atr": round(atr_val, digits),
                     "h1_bias": htf_bias.get("H1", "NEUTRAL"),
                     "h1_phase": htf_bias.get("H1_phase", "RANGING"),
@@ -149,80 +176,129 @@ def run_live_service():
                     "session": session,
                 }
 
-                # Check if market is closed
-                if not is_open:
-                    sig_id = f"{sym}_CLOSED"
-                    write_signal(
-                        direction=0, tier="STANDBY", trade_type="MARKET CLOSED",
-                        confidence=0.0, accuracy=0.0, grade="STANDBY",
-                        reasoning=f"{market_status_msg}. Hakuna biashara inayoruhusiwa.",
-                        tpsl={"sl": round(cur_price, digits), "tp1": round(cur_price, digits), "tp2": round(cur_price, digits), "sl_pips": 0, "tp1_pips": 0, "tp2_pips": 0, "rr": 0},
-                        lot=0.0, feat=feat, signal_id=sig_id, entry_price=round(cur_price, digits),
-                        session=session, symbol=sym
-                    )
-                    continue
-
-                # Candle Gate: Only evaluate new signal on new M15 candle close!
                 latest_candle_time = df15.index[-1]
                 is_new_candle = (last_processed_candle[sym] != latest_candle_time)
 
-                if is_new_candle:
+                if not is_open:
+                    pair_signals[sym] = {
+                        "signal_id": f"{sym}_CLOSED",
+                        "symbol": sym,
+                        "direction": "STANDBY",
+                        "action": "STANDBY (SOKO LIMEFUNGWA)",
+                        "trade_type": "MARKET CLOSED",
+                        "tier": "STANDBY",
+                        "accuracy": 0.0,
+                        "accuracy_pct": 0.0,
+                        "grade": "STANDBY",
+                        "entry": round(cur_price, digits),
+                        "sl": round(cur_price, digits),
+                        "tp": round(cur_price, digits),
+                        "tp1": round(cur_price, digits),
+                        "tp2": round(cur_price, digits),
+                        "sl_pips": 0,
+                        "tp_pips": 0,
+                        "tp1_pips": 0,
+                        "tp2_pips": 0,
+                        "rr": 0,
+                        "lot": 0.0,
+                        "reasoning": f"{market_status_msg}. Hakuna biashara inayoruhusiwa kwa sasa.",
+                        "session": session,
+                        "timestamp": now_dt.isoformat()
+                    }
+                elif is_new_candle or sym not in pair_signals or pair_signals[sym].get("direction") == "STANDBY":
                     tier_sigs = scan_tiers(feat, htf_bias, session, now_hour=now_dt.hour, symbol=sym)
                     if tier_sigs:
                         sig = tier_sigs[0]
                         d = sig["direction"]
                         tier = sig["tier"]
-                        ttype = sig["trade_type"]
+                        ttype = sig.get("trade_type", "SCALPING" if tier in ("SCALP", "MICRO", "BREAKOUT", "EXPANSION") else "DAY-TRADE")
                     else:
                         d = 1 if feat["_ema_fast"] >= feat["_ema_slow"] else -1
                         tier = "TREND"
-                        ttype = "INTRA-SWING"
+                        ttype = "DAY-TRADE"
 
                     score, _ = get_structure_score(df15, cur_price, d, atr_val, htf_bias, False, state, session)
                     conf = compute_confidence(d, feat, tier, htf_bias, session, score)
                     acc, grade, reason = compute_accuracy_and_reasoning(d, tier, ttype, feat, htf_bias, session, score)
 
-                    # During Asian session, add context to reasoning
-                    if session == "ASIA":
-                        reason = f"[ASIA SESSION]: {reason} Soko linatembea polepole usiku."
-
                     tpsl = compute_dual_tpsl(d, cur_price, tier, ttype, atr_val, conf, acc, symbol=sym)
                     lot = risk.get_lot_size(sl_pips=tpsl["sl_pips"], symbol=sym)
                     sig_id = make_signal_id(tier, d, symbol=sym)
+                    dir_str = "BUY" if d == 1 else "SELL"
 
-                    write_signal(
-                        direction=d, tier=tier, trade_type=ttype, confidence=conf,
-                        accuracy=acc, grade=grade, reasoning=reason, tpsl=tpsl, lot=lot,
-                        feat=feat, signal_id=sig_id, entry_price=round(cur_price, digits),
-                        session=session, symbol=sym
-                    )
+                    sig_dict = {
+                        "signal_id": sig_id,
+                        "symbol": sym,
+                        "direction": dir_str,
+                        "action": f"{dir_str} NOW",
+                        "trade_type": ttype,
+                        "tier": tier,
+                        "accuracy": acc,
+                        "accuracy_pct": acc,
+                        "grade": grade,
+                        "entry": round(cur_price, digits),
+                        "sl": tpsl["sl"],
+                        "tp": tpsl["tp2"],
+                        "tp1": tpsl["tp1"],
+                        "tp2": tpsl["tp2"],
+                        "sl_pips": tpsl["sl_pips"],
+                        "tp_pips": tpsl["tp2_pips"],
+                        "tp1_pips": tpsl["tp1_pips"],
+                        "tp2_pips": tpsl["tp2_pips"],
+                        "rr": tpsl["rr"],
+                        "lot": lot,
+                        "reasoning": reason,
+                        "session": session,
+                        "timestamp": now_dt.isoformat()
+                    }
+                    pair_signals[sym] = sig_dict
                     last_processed_candle[sym] = latest_candle_time
+                else:
+                    if sym in pair_signals and pair_signals[sym].get("direction") != "STANDBY":
+                        pair_signals[sym]["current_price"] = round(cur_price, digits)
 
-                candidate_signals.append({
-                    "symbol": sym, "price": cur_price, "feat": feat
-                })
-
-            # Update market telemetry
-            top_sym = "XAUUSD"
-            top_price = symbols_telemetry.get(top_sym, {}).get("price", 0.0)
+            top_sym = "XAUUSD" if "XAUUSD" in pair_signals else list(pair_signals.keys())[0]
+            top_sig = pair_signals.get(top_sym, {})
             top_tele = symbols_telemetry.get(top_sym, {})
-            gold_sig = next((c for c in candidate_signals if c["symbol"] == "XAUUSD"), None)
-            top_feat = gold_sig["feat"] if gold_sig else feat
+
+            history = existing_data.get("history", [])
+            for sym, s_obj in pair_signals.items():
+                if s_obj.get("direction") != "STANDBY":
+                    if not any(h.get("signal_id") == s_obj.get("signal_id") for h in history):
+                        history.insert(0, s_obj)
+            history = history[:30]
+
             next_candle_sec = max(0, ((14 - (now_dt.minute % 15)) * 60) + (60 - now_dt.second))
 
-            gold_open, gold_status_msg = check_market_open("XAUUSD", None, now_dt)
-            risk_stat = f"OK: {session} ACTIVE" if gold_open else f"STANDBY: {gold_status_msg}"
+            signals_payload = {
+                "latest_signal": top_sig,
+                "pair_signals": pair_signals,
+                "symbols_telemetry": symbols_telemetry,
+                "market_status": {
+                    "symbol": top_sym,
+                    "price": top_tele.get("price", 0.0),
+                    "session": session,
+                    "session_desc": session_desc,
+                    "h1_bias": top_tele.get("h1_bias", "NEUTRAL"),
+                    "h1_phase": top_tele.get("h1_phase", "RANGING"),
+                    "adx": top_tele.get("adx", 20.0),
+                    "atr": top_tele.get("atr", 0.0),
+                    "next_candle_sec": next_candle_sec,
+                    "last_update": now_dt.isoformat()
+                },
+                "history": history
+            }
 
-            update_market_status_json(
-                price=top_price, session=session,
-                htf_bias={"H1": top_tele.get("h1_bias", "NEUTRAL"), "H1_phase": top_tele.get("h1_phase", "RANGING")},
-                feat=top_feat, struct_score=2, stage=symbol_states[top_sym].stage,
-                risk_status=risk_stat, next_candle_sec=next_candle_sec,
-                symbol=top_sym, symbols_telemetry=symbols_telemetry
-            )
+            os.makedirs(os.path.dirname(SIGNALS_JSON), exist_ok=True)
+            with open(SIGNALS_JSON, "w", encoding="utf-8") as f:
+                json.dump(signals_payload, f, indent=2)
+
+            print(f"[OK] {now_dt.strftime('%H:%M:%S UTC')} | Session: {session} | Pairs updated: {list(pair_signals.keys())}", flush=True)
 
         except Exception as e:
-            print(f"[ERROR] Live scan error: {e}")
+            print(f"[ERROR] Live scan error: {e}", flush=True)
+            import traceback
+            traceback.print_exc()
 
         time.sleep(POLL_INTERVAL_SECONDS)
 
