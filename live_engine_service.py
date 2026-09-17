@@ -271,15 +271,29 @@ def run_live_service():
                         htf_dict = {"H1": mtf_data["h1"]["direction"], "H4": mtf_data["h4"]["direction"]}
                         tier_sigs = scan_tiers(feat, htf_dict, session, now_hour=now_dt.hour, symbol=sym)
 
-                        # STRICT GATE: Must have a confirmed tier setup AND 3/3 Confluence!
-                        has_setup = bool(tier_sigs)
-                        confluence_ok = (mtf_data.get("confluence_score") == "3/3")
+                        # EVALUATE TRADES:
+                        # 1. First priority: Confirmed Tier Setup from Scanner
+                        # 2. Second priority: High-confluence MTF trend trigger (Confluence >= 2/3)
+                        confluence_score = mtf_data.get("confluence_score", "1/3")
+                        confluence_ok = confluence_score in ("2/3", "3/3")
+                        selected_sig = None
 
-                        if has_setup and confluence_ok:
-                            sig = tier_sigs[0]
-                            d = sig["direction"]
-                            tier = sig["tier"]
-                            ttype = sig.get("trade_type", "SCALPING" if tier in ("SCALP", "MICRO", "BREAKOUT", "EXPANSION") else "DAY-TRADE")
+                        if tier_sigs:
+                            selected_sig = tier_sigs[0]
+                        elif confluence_ok:
+                            m15_trig = mtf_data["m15"]["trigger"]
+                            d_trig = 1 if "BUY" in m15_trig else -1
+                            selected_sig = {
+                                "tier": "TREND",
+                                "trade_type": "DAY-TRADE" if "SWING" not in mtf_data["h1"]["swing_status"] else "SWING",
+                                "direction": d_trig,
+                                "reason": f"MTF CONFLUENCE ({confluence_score}): H1 {htf_dict['H1']} + M15 trigger"
+                            }
+
+                        if selected_sig:
+                            d = selected_sig["direction"]
+                            tier = selected_sig["tier"]
+                            ttype = selected_sig.get("trade_type", "SCALPING" if tier in ("SCALP", "MICRO", "BREAKOUT", "EXPANSION") else "DAY-TRADE")
 
                             score, _ = get_structure_score(df15, cur_price, d, atr_val, htf_dict, False, state, session)
                             conf = compute_confidence(d, feat, tier, htf_dict, session, score)
@@ -293,8 +307,8 @@ def run_live_service():
                                 entry=round(cur_price, digits), tp1=tpsl["tp1"], tp2=tpsl["tp2"], sl=tpsl["sl"]
                             )
 
-                            # STRICT GRADE GATE: Must be Grade A or A+ (acc >= 78.0)
-                            if acc >= 78.0:
+                            # ALLOW SIGNALS: Grade B, A, or A+ (acc >= 68.0)
+                            if acc >= 68.0:
                                 lot = risk.get_lot_size(sl_pips=tpsl["sl_pips"], symbol=sym)
                                 sig_id = make_signal_id(tier, d, symbol=sym)
                                 dir_str = "BUY" if d == 1 else "SELL"
@@ -327,7 +341,7 @@ def run_live_service():
                                     "breakeven_reached": False,
                                     "tp1_reached": False,
                                     "lifecycle_status": "IN_PROGRESS",
-                                    "lifecycle_msg": "Trade ya Grade A imefunguliwa na imefungwa (Locked). Inafuata muundo wa H4/H1; kelele za M15 haziruhusiwi kugeuza oda.",
+                                    "lifecycle_msg": f"Trade ({grade} - {acc}%) imefunguliwa na imefungwa (Locked). Inafuata muundo wa H4/H1; kelele za M15 haziruhusiwi kugeuza oda.",
                                     "reasoning": reason,
                                     "session": session,
                                     "timestamp": now_dt.isoformat(),
@@ -339,7 +353,7 @@ def run_live_service():
                                 pair_signals[sym] = new_trade
                                 continue
 
-                        # IF NO GRADE A SETUP: STAY SAFELY IN SCANNING (NO FORCED TRADES)
+                        # IF NO SETUP: STAY SAFELY IN SCANNING (NO FORCED TRADES)
                         h4_d = mtf_data["h4"]["direction"]
                         h1_d = mtf_data["h1"]["direction"]
                         m15_d = mtf_data["m15"]["trigger"]
@@ -352,7 +366,7 @@ def run_live_service():
                             "direction": "STANDBY",
                             "action": "STANDBY (INASUBIRI FURSA)",
                             "trade_type": "INASUBIRI FURSA",
-                            "execution_style": "GRADE A ONLY",
+                            "execution_style": "INASUBIRI SETUP",
                             "tier": "SCANNER",
                             "accuracy": 0.0,
                             "accuracy_pct": 0.0,

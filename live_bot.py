@@ -507,10 +507,22 @@ def scan_tiers(feat: dict, htf_bias: dict, session: str,
     pip_sz  = spec.get("pip_size", 0.10)
     atr_pips = (atr / pip_sz) if pip_sz > 0 else (atr * 10)
 
-    # Universal pip thresholds
-    min_scalp_pips = 8.0
-    min_trend_pips = 12.0
-    min_swing_pips = 20.0
+    # Symbol-specific pip thresholds
+    if symbol == "XAUUSD":
+        min_scalp_pips = 30.0
+        min_trend_pips = 50.0
+        min_swing_pips = 80.0
+    elif "JPY" in symbol:
+        min_scalp_pips = 5.0
+        min_trend_pips = 8.0
+        min_swing_pips = 14.0
+    else:
+        min_scalp_pips = 2.0
+        min_trend_pips = 3.0
+        min_swing_pips = 4.5
+
+    h1_bull = "BULL" in str(h1).upper()
+    h1_bear = "BEAR" in str(h1).upper()
 
     # ── TIER 1: SESSION BREAKOUT (London 07:00, Overlap 13:00) ───────────────
     if atr_pips >= min_scalp_pips and now_hour >= 0:
@@ -534,13 +546,13 @@ def scan_tiers(feat: dict, htf_bias: dict, session: str,
 
     # ── TIER 2: SWING (strictest -- full alignment) ───────────────────────────
     if atr_pips >= min_swing_pips:
-        if ef > em > es and adx >= ADX_STRONG and dip > dim and h1 in ("BULL", "NEUTRAL"):
+        if ef > em > es and adx >= ADX_STRONG and dip > dim and (h1_bull or h1 == "NEUTRAL"):
             signals.append({
                 "tier": "SWING", "trade_type": "INTRA-SWING", "direction": 1,
                 "reason": f"SWING BUY: full EMA + ADX={adx:.1f} + H1={h1}",
                 "min_stage": SEQ_BOS,
             })
-        if ef < em < es and adx >= ADX_STRONG and dim > dip and h1 in ("BEAR", "NEUTRAL"):
+        if ef < em < es and adx >= ADX_STRONG and dim > dip and (h1_bear or h1 == "NEUTRAL"):
             signals.append({
                 "tier": "SWING", "trade_type": "INTRA-SWING", "direction": -1,
                 "reason": f"SWING SELL: full EMA + ADX={adx:.1f} + H1={h1}",
@@ -737,18 +749,28 @@ def compute_accuracy_and_reasoning(direction: int, tier: str, trade_type: str,
     es = feat.get("_ema_slow", 0)
     cl = feat.get("_close", 0)
 
-    # 1. Higher Timeframe Confluence (Up to +20%)
-    if (d == 1 and h1 == "BULL") or (d == -1 and h1 == "BEAR"):
+    # 1. Higher Timeframe Confluence (Up to +22%)
+    h1_is_bull = "BULL" in str(h1).upper()
+    h1_is_bear = "BEAR" in str(h1).upper()
+    h4 = htf_bias.get("H4", "NEUTRAL")
+    h4_is_bull = "BULL" in str(h4).upper()
+    h4_is_bear = "BEAR" in str(h4).upper()
+
+    if (d == 1 and h1_is_bull) or (d == -1 and h1_is_bear):
         pts += 15.0
         reasons.append(f"H1 {h1} trend aligned")
         if h1_phase == "PULLBACK":
-            pts += 5.0
+            pts += 4.0
             reasons.append("H1 pullback discount")
     elif h1 == "NEUTRAL":
         pts += 5.0
     else:
-        pts -= 6.0
+        pts -= 4.0
         reasons.append(f"counter H1 {h1} trend")
+
+    if (d == 1 and h4_is_bull) or (d == -1 and h4_is_bear):
+        pts += 8.0
+        reasons.append(f"H4 {h4} macro aligned")
 
     # 2. Moving Average & Momentum (Up to +18%)
     if (d == 1 and ef > em > es) or (d == -1 and ef < em < es):
