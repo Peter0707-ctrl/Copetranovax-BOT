@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" href="/icons/icon-192.png">
 
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>COPETRANOVAX QUANTUM SIGNAL TERMINAL</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -854,9 +854,123 @@
       color: #cbd5e1;
     }
 
-    @media (max-width: 900px) {
-      .milestones-row { grid-template-columns: repeat(2, 1fr); }
-      .mtf-grid { grid-template-columns: 1fr; }
+    /* ========================================================= */
+    /* COMPREHENSIVE MOBILE RESPONSIVE ENGINE                    */
+    /* ========================================================= */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    @media (max-width: 1024px) {
+      .app-layout {
+        grid-template-columns: 1fr !important;
+        padding: 16px 14px;
+        gap: 16px;
+      }
+      .sidebar {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header {
+        padding: 12px 14px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+      .header-status {
+        flex-wrap: wrap;
+        justify-content: space-between;
+        width: 100%;
+        gap: 8px;
+      }
+      .brand-title {
+        font-size: 15px;
+      }
+      .brand-sub {
+        display: none;
+      }
+      .pair-tabs {
+        display: flex !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        gap: 8px !important;
+        padding-bottom: 6px !important;
+        scrollbar-width: none;
+      }
+      .pair-tabs::-webkit-scrollbar {
+        display: none;
+      }
+      .pair-tab {
+        flex: 0 0 auto !important;
+        min-width: 135px !important;
+      }
+      .signal-main-card {
+        padding: 16px;
+      }
+      .signal-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .signal-action-badge {
+        width: 100%;
+        text-align: center;
+        padding: 10px 14px;
+        font-size: 15px;
+      }
+      .signal-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px;
+      }
+      .milestones-row {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px;
+      }
+      .mtf-grid {
+        grid-template-columns: 1fr !important;
+      }
+      .scientific-grid, .perf-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+      .outlook-levels-row {
+        grid-template-columns: 1fr !important;
+        gap: 8px;
+      }
+      .history-table {
+        min-width: 620px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .app-layout {
+        padding: 10px 8px;
+      }
+      .signal-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px;
+      }
+      .scientific-grid, .perf-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px;
+      }
+      .stat-chip, .perf-stat-box {
+        padding: 8px 10px;
+      }
+      .perf-stat-val {
+        font-size: 15px;
+      }
+      .btn-pwa-install {
+        padding: 5px 10px;
+        font-size: 9px;
+      }
+      .lang-btn {
+        padding: 4px 8px;
+        font-size: 10px;
+      }
     }
 
 
@@ -1124,6 +1238,212 @@
       font-family: var(--font-mono);
     }
 
+  
+    /* Reversal Warning Card */
+    .reversal-card {
+      background: linear-gradient(135deg, rgba(255, 190, 26, 0.08), rgba(255, 51, 102, 0.08));
+      border: 1px solid rgba(255, 190, 26, 0.4);
+      border-radius: 12px;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      box-shadow: 0 0 20px rgba(255, 190, 26, 0.1);
+      transition: all 0.3s ease;
+    }
+    .reversal-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .reversal-badge {
+      font-family: var(--font-orbitron);
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--neon-gold);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .reversal-time-pill {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 12px;
+      background: rgba(255, 190, 26, 0.15);
+      border: 1px solid rgba(255, 190, 26, 0.4);
+      color: #fff;
+    }
+    .reversal-desc {
+      font-size: 12px;
+      line-height: 1.55;
+      color: #f1f5f9;
+      background: rgba(14, 26, 43, 0.7);
+      padding: 10px 14px;
+      border-radius: 8px;
+      border-left: 3px solid var(--neon-gold);
+    }
+
+    /* ==========================================
+       MOBILE RESPONSIVE COMPREHENSIVE OVERHAUL
+       ========================================== */
+    html, body {
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    @media (max-width: 1100px) {
+      .container {
+        padding: 16px 14px;
+      }
+      .main-grid {
+        grid-template-columns: 1fr;
+        gap: 18px;
+      }
+      .sidebar {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 12px 10px;
+      }
+      .header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 12px 14px;
+      }
+      .brand {
+        justify-content: space-between;
+      }
+      .brand-title {
+        font-size: 15px;
+      }
+      .header-status {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+      }
+      .status-pill {
+        font-size: 10px;
+        padding: 4px 10px;
+      }
+      .lang-switch-container {
+        padding: 2px;
+      }
+      .lang-btn {
+        padding: 4px 8px;
+        font-size: 10px;
+      }
+      .btn-pwa-install {
+        font-size: 9px;
+        padding: 4px 10px;
+      }
+
+      /* Horizontal Scrolling Tabs for Mobile */
+      .pair-tabs-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -10px;
+        padding: 0 10px 6px 10px;
+      }
+      .pair-selector-row {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 8px;
+        min-width: max-content;
+      }
+      .pair-tab {
+        padding: 8px 14px;
+        font-size: 12px;
+      }
+
+      /* Signal Main Card */
+      .signal-main-card {
+        padding: 16px 14px;
+      }
+      .signal-header-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+      .signal-action-badge {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+        font-size: 13px;
+        padding: 10px 16px;
+      }
+      .price-levels-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      .milestones-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+
+      /* Multi-Timeframe Matrix */
+      .mtf-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      /* Scientific Grid & Performance Grid */
+      .scientific-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      .perf-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      .outlook-levels-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      /* Table Touch Scroll Wrapper */
+      .history-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -10px;
+        padding: 0 10px;
+      }
+      .history-table {
+        min-width: 620px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .price-levels-grid {
+        grid-template-columns: 1fr;
+      }
+      .scientific-grid {
+        grid-template-columns: 1fr;
+      }
+      .perf-grid {
+        grid-template-columns: 1fr;
+      }
+      .milestones-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -1169,6 +1489,17 @@
         </div>
 
         
+        <!-- Honest Reversal Warning & Market Exhaustion Banner -->
+        <div class="reversal-card" id="reversalWarningCard" style="display: none;">
+          <div class="reversal-card-top">
+            <div class="reversal-badge" id="reversalConditionBadge">TAHADHARI YA REVERSAL (SOKO LIME-SELL SANA)</div>
+            <div class="reversal-time-pill" id="reversalWindowPill">REVERSAL INATARAJIWA: DAKIKA 30 - 60</div>
+          </div>
+          <div class="reversal-desc" id="reversalAdviceText">
+            UKWELI HALISI KUHUSU SOKO: Soko limeshuka sana (Oversold). Kuwa makini usidanganyike ku-HOLD trade hii kwa masaa mengi! Kama unachukua SELL hii, iwe ni SCALPING ya haraka tu ya dakika 15 hadi 30 kuchukua pips chache kabla halijageuka, au subiri soko ligeuke uingie BUY.
+          </div>
+        </div>
+
         <!-- Active Trade Lifecycle & Anti-Noise Lock Banner -->
         <div class="trade-lifecycle-card" id="tradeLifecycleCard">
           <div class="lifecycle-top">
@@ -1298,6 +1629,37 @@
       </div>
 
       
+        
+        <!-- Market Exhaustion & Reversal Truth Card -->
+        <div class="feature-card" id="reversalRiskCard" style="border-left: 4px solid var(--neon-gold);">
+          <div class="feature-card-header">
+            <div class="feature-card-title" id="lblReversalTitle" style="color: var(--neon-gold);">UKWELI WA SOKO NA TAHADHARI YA REVERSAL (MARKET EXHAUSTION)</div>
+            <div class="outlook-badge" id="revRiskBadge" style="background: rgba(255, 190, 26, 0.15); color: var(--neon-gold); border: 1px solid rgba(255, 190, 26, 0.4);">HATARI: 65% (YA WASTANI)</div>
+          </div>
+          <div class="scientific-grid">
+            <div class="stat-chip">
+              <span class="stat-chip-label" id="lblRsiStatus">Kipimo cha RSI (M15)</span>
+              <span class="stat-chip-val" id="revRsiVal" style="color: var(--neon-cyan);">35.1</span>
+            </div>
+            <div class="stat-chip">
+              <span class="stat-chip-label" id="lblExhaustionStatus">Hali ya Msukumo</span>
+              <span class="stat-chip-val" id="revExhaustionVal" style="font-size: 11px; color: var(--neon-gold);">OVERSOLD WARNING</span>
+            </div>
+            <div class="stat-chip">
+              <span class="stat-chip-label" id="lblReversalWindow">Muda Unaotegemewa</span>
+              <span class="stat-chip-val" id="revWindowVal" style="color: #fff; font-size: 12px;">Dakika 30 hadi 60</span>
+            </div>
+            <div class="stat-chip">
+              <span class="stat-chip-label" id="lblRecommendedStyle">Mbinu ya Sasa</span>
+              <span class="stat-chip-val" id="revStyleVal" style="color: var(--neon-green); font-size: 12px;">QUICK SCALP ONLY</span>
+            </div>
+          </div>
+          <div class="formula-box" style="background: rgba(255, 190, 26, 0.06); border-color: rgba(255, 190, 26, 0.25); color: #fff;">
+            <div style="font-size: 11px; font-weight: 800; color: var(--neon-gold); text-transform: uppercase;" id="lblDisclosureHead">MUONGOZO WA KISAYANSI WA UKWELI WA SOKO:</div>
+            <div class="evidence-text" id="revDisclosureText" style="color: #f1f5f9;">Inachambua kiwango cha uchovu wa soko (Momentum Exhaustion)...</div>
+          </div>
+        </div>
+
         <!-- Scientific Duration & First Passage Time Model Card -->
         <div class="feature-card">
           <div class="feature-card-header">
@@ -1430,7 +1792,8 @@
     <!-- History Card -->
     <div class="history-card">
       <div class="info-card-title">HISTORIA YA SIGNALS ZA HIVI KARIBUNI (RECENT SIGNALS)</div>
-      <table class="history-table">
+      <div class="history-table-container">
+          <table class="history-table">
         <thead>
           <tr>
             <th>MUDA</th>
@@ -1447,6 +1810,7 @@
           <!-- Injected via JS -->
         </tbody>
       </table>
+        </div>
     </div>
 
   </main>
@@ -2012,6 +2376,43 @@
           durPill.style.borderColor = 'rgba(0, 216, 246, 0.4)';
           durPill.style.background = 'rgba(0, 216, 246, 0.12)';
           instrText.innerHTML = 'Hii ni <strong>DAY TRADE</strong> ya kikao cha <strong>' + currentSession + '</strong> kwenye <strong>' + sym + '</strong>. <strong>Shikilia (HOLD) kwa masaa 1 hadi 3</strong>. Mwelekeo wa soko una nguvu; ikifika <strong>TP1: ' + tp1 + '</strong> funga 50% ya faida na sogeza Stop Loss kwenye Entry kulinda mtaji.';
+        }
+      }
+
+      // ==========================================
+      // REVERSAL EXHAUSTION & HONEST TRUTH BANNER
+      // ==========================================
+      const rev = sig.reversal_analysis || {};
+      const revCard = document.getElementById('reversalWarningCard');
+      const revBadge = document.getElementById('reversalConditionBadge');
+      const revPill = document.getElementById('reversalWindowPill');
+      const revText = document.getElementById('reversalAdviceText');
+
+      if (revCard && revBadge && revText) {
+        if (rev.is_exhaustion || rev.reversal_risk === 'HIGH' || rev.reversal_risk === 'EXTREME') {
+          revCard.style.display = 'flex';
+          revBadge.textContent = currentLang === 'en' ? rev.condition_en : rev.condition_sw;
+          revPill.textContent = currentLang === 'en' ? ('REVERSAL EXPECTED: ' + rev.expected_reversal_window_en) : ('REVERSAL INATARAJIWA: ' + rev.expected_reversal_window_sw);
+          revText.textContent = currentLang === 'en' ? rev.honest_advice_en : rev.honest_advice_sw;
+
+          // If exhaustion is active, refine the main action badge and duration
+          const actionBadge = document.getElementById('cardActionBadge');
+          if (actionBadge && sig.state === 'IN_TRADE') {
+            actionBadge.textContent = sig.direction + ' (QUICK SCALP - REVERSAL RISK)';
+            actionBadge.style.background = 'linear-gradient(135deg, rgba(255, 190, 26, 0.3), rgba(255, 51, 102, 0.3))';
+            actionBadge.style.borderColor = 'var(--neon-gold)';
+            actionBadge.style.color = '#fff';
+          }
+
+          const durPill = document.getElementById('holdDurationPill');
+          if (durPill) {
+            durPill.textContent = currentLang === 'en' ? 'HOLD WINDOW: 15 TO 30 MINS (QUICK SCALP BEFORE REVERSAL)' : 'MUDA WA KUSHIKILIA: DAKIKA 15 HADI 30 (QUICK SCALP KABLA YA REVERSAL)';
+            durPill.style.color = 'var(--neon-gold)';
+            durPill.style.borderColor = 'rgba(255, 190, 26, 0.5)';
+            durPill.style.background = 'rgba(255, 190, 26, 0.15)';
+          }
+        } else {
+          revCard.style.display = 'none';
         }
       }
     }

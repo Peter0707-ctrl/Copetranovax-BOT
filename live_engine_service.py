@@ -122,6 +122,155 @@ def compute_performance_analytics(history: list) -> dict:
         "seeded_history": history
     }
 
+
+def compute_reversal_exhaustion_model(df15: pd.DataFrame, direction: int, cur_price: float, atr_val: float) -> dict:
+    close = df15['close']
+    delta = close.diff()
+    gain = (delta.where(delta > 0, 0)).ewm(alpha=1/14, adjust=False).mean()
+    loss = (-delta.where(delta < 0, 0)).ewm(alpha=1/14, adjust=False).mean()
+    rs = gain / loss.replace(0, 1e-9)
+    rsi = 100 - (100 / (1 + rs))
+    last_rsi = round(float(rsi.iloc[-1]), 1)
+
+    # Detect Overbought / Oversold and compute Reversal Risk
+    if last_rsi <= 28.0:
+        level = "EXTREME_OVERSOLD"
+        risk_pct = 85.0
+        window_sw = "Dakika 15 hadi 35"
+        window_en = "15 to 35 Minutes"
+        status_sw = "SOKO LIMEUZA SANA (EXTREME OVERSOLD)"
+        status_en = "EXTREME OVERSOLD CONDITION"
+        if direction == -1:
+            disc_sw = (
+                f"UKWELI WA SOKO: Soko limeuza kupita kiasi (RSI: {last_rsi}). Hatari ya soko kugeuka ghafla (Reversal/Bounce) ni kubwa mno (85%). "
+                f"USIFANYE SWING YA KUUZA HAPA! Ikiwa unataka kuuza, fanya Scalping ya haraka ya dakika 10 hadi 25 tu ili kuvuna wimbi la mwisho la msukumo, "
+                f"na hakikisha unasogeza Stop Loss kwenye Breakeven punde tu unapopata pips 8-10 kabla ya soko halijageuka."
+            )
+            disc_en = (
+                f"MARKET REALITY DISCLOSURE: Asset is severely oversold (RSI: {last_rsi}). Sudden mean-reversion bounce risk is extreme (85%). "
+                f"DO NOT OPEN A SWING SHORT HERE! If taking a SELL, restrict strictly to a rapid 10 to 25 minute scalp to capture terminal exhaustion, "
+                f"and advance Stop Loss to Breakeven immediately at +8-10 pips before the inevitable reversal initiates."
+            )
+        else:
+            disc_sw = (
+                f"FURSA YA REVERSAL: Soko lilikuwa limeuza kupita kiasi (RSI: {last_rsi}) na sasa linaonyesha dalili za kugeuka (Bottom Rejection). "
+                f"Hii ni fursa nzuri ya Counter-Trend BUY kuelekea kanda ya wastani ya bei (Mean Reversion)."
+            )
+            disc_en = (
+                f"REVERSAL OPPORTUNITY: Asset was heavily oversold (RSI: {last_rsi}) and is currently carving out bottom rejection structure. "
+                f"This presents a high-probability mean-reversion BUY targeting equilibrium."
+            )
+    elif last_rsi <= 36.0:
+        level = "APPROACHING_OVERSOLD"
+        risk_pct = 65.0
+        window_sw = "Dakika 30 hadi 60"
+        window_en = "30 to 60 Minutes"
+        status_sw = "SOKO LIMEUZA KWA KIWANGO KIKUBWA (OVERSOLD WARNING)"
+        status_en = "APPROACHING OVERSOLD ZONE"
+        if direction == -1:
+            disc_sw = (
+                f"TAHADHARI YA UKWELI: Soko limeuza sana (RSI: {last_rsi}). Mwelekeo mkuu ungali wa kuuza, lakini kuwa makini sana kwani bei inakaribia kanda ya liquidity ya chini "
+                f"ambapo benki zitaanza kufunga faida (Take Profit). Tunategemea pullback au reversal ndani ya dakika 30 hadi 60. "
+                f"Unaweza ukasell kwa Scalping ya haraka ya dakika 15 hadi 30 lakini kuwa makini na mtaji wako."
+            )
+            disc_en = (
+                f"HONEST MARKET CAUTION: Market has experienced substantial selling (RSI: {last_rsi}). While trend bias remains short, be alert: price is entering institutional liquidity discount "
+                f"where institutional profit taking will occur. Anticipate an exhaustion pullback or reversal within 30 to 60 minutes. "
+                f"You may execute a short scalp for 15 to 30 minutes, but avoid overstaying."
+            )
+        else:
+            disc_sw = (
+                f"Soko limefanya punguzo kubwa la bei (Discount Liquidity, RSI: {last_rsi}). "
+                f"Uwezekano wa kugeuka na kupanda (Bounce) unazidi kuongezeka kadri bei inavyokaribia Support."
+            )
+            disc_en = (
+                f"Price has discounted significantly into oversold territory (RSI: {last_rsi}). "
+                f"Probability of upward mean-reversion bounce increases as price tests support."
+            )
+    elif last_rsi >= 72.0:
+        level = "EXTREME_OVERBOUGHT"
+        risk_pct = 85.0
+        window_sw = "Dakika 15 hadi 35"
+        window_en = "15 to 35 Minutes"
+        status_sw = "SOKO LIMENUNUA SANA (EXTREME OVERBOUGHT)"
+        status_en = "EXTREME OVERBOUGHT CONDITION"
+        if direction == 1:
+            disc_sw = (
+                f"UKWELI WA SOKO: Soko limenunua kupita kiasi (RSI: {last_rsi}). Hatari ya bei kuporomoka au kugeuka ghafla (Reversal/Dump) ni kubwa mno (85%). "
+                f"USINUNUE KWA MATUMAINI YA SWING YA MASAA MENGI! Kama unanunua BUY, ifanye kama Scalping ya haraka ya dakika 10 hadi 25 tu, "
+                f"na ufunge faida mara moja kwenye TP1 kwa sababu wauzaji wakubwa wataingia sokoni kusafisha wanunuzi (Liquidity Sweep)."
+            )
+            disc_en = (
+                f"MARKET REALITY DISCLOSURE: Asset is excessively overbought (RSI: {last_rsi}). Severe correction or reversal risk is elevated (85%). "
+                f"DO NOT ENTER A MULTI-HOUR SWING LONG HERE! If executing BUY, treat strictly as a high-velocity 10 to 25 minute scalp, "
+                f"and secure profit at TP1 as smart money distribution will trigger a fast corrective dump."
+            )
+        else:
+            disc_sw = (
+                f"FURSA YA REVERSAL: Soko lilikuwa limenunua sana (RSI: {last_rsi}) na sasa linaonyesha kukataliwa juu (Top Rejection). "
+                f"Hii ni fursa bora ya Counter-Trend SELL."
+            )
+            disc_en = (
+                f"REVERSAL OPPORTUNITY: Asset was heavily overbought (RSI: {last_rsi}) and is displaying top rejection structure. "
+                f"High-probability mean-reversion SELL opportunity."
+            )
+    elif last_rsi >= 64.0:
+        level = "APPROACHING_OVERBOUGHT"
+        risk_pct = 65.0
+        window_sw = "Dakika 30 hadi 60"
+        window_en = "30 to 60 Minutes"
+        status_sw = "SOKO LIMENUNUA KWA KIASI KIKUBWA (OVERBOUGHT WARNING)"
+        status_en = "APPROACHING OVERBOUGHT ZONE"
+        if direction == 1:
+            disc_sw = (
+                f"TAHADHARI YA UKWELI: Soko limenunua sana (RSI: {last_rsi}). Mwelekeo una nguvu lakini kuwa makini kwani soko liko karibu na kanda ya kizuizi (Resistance). "
+                f"Kuna uwezekano mkubwa wa pullback kuelekea chini ndani ya dakika 30 hadi 60. "
+                f"Unaweza ukanunua kwa Scalping ya haraka ya dakika 15 hadi 30 lakini usishikilie oda kwa masaa mengi."
+            )
+            disc_en = (
+                f"HONEST MARKET CAUTION: Market has run up aggressively (RSI: {last_rsi}). Upward trend persists but exercise caution as price approaches key resistance. "
+                f"Expect an exhaustion pullback within 30 to 60 minutes. "
+                f"You may scalp long for 15 to 30 minutes, but avoid holding indefinitely."
+            )
+        else:
+            disc_sw = (
+                f"Bei inakaribia kilele cha ununuzi (Overbought Area, RSI: {last_rsi}). "
+                f"Uwezekano wa kugeuka kuelekea chini unazidi kuongezeka."
+            )
+            disc_en = (
+                f"Price is approaching premium overbought ceiling (RSI: {last_rsi}). "
+                f"Probability of downward mean-reversion increases."
+            )
+    else:
+        level = "HEALTHY_TREND"
+        risk_pct = 22.0
+        window_sw = "Hakuna hatari ya haraka"
+        window_en = "No immediate reversal threat"
+        status_sw = "MWENENDO SALAMA WA SOKO (BALANCED FLOW)"
+        status_en = "BALANCED MOMENTUM REGIME"
+        disc_sw = (
+            f"Mwenendo wa soko ni tulivu (RSI: {last_rsi}). Hakuna dalili za uchovu mkubwa wa soko wala hatari ya reversal ya haraka. "
+            f"Biashara inaweza kushikiliwa kwa nidhamu kuelekea TP1 na TP2."
+        )
+        disc_en = (
+            f"Momentum structure is balanced (RSI: {last_rsi}). No immediate exhaustion or reversal threat detected. "
+            f"Trade can be executed and held per structured TP1/TP2 targets."
+        )
+
+    return {
+        "rsi": last_rsi,
+        "exhaustion_level": level,
+        "reversal_risk_pct": risk_pct,
+        "status_sw": status_sw,
+        "status_en": status_en,
+        "reversal_risk_label_sw": f"HATARI YA REVERSAL: {risk_pct}% ({'KUBWA' if risk_pct >= 70 else ('YA WASTANI' if risk_pct >= 50 else 'NDOGO')})",
+        "reversal_risk_label_en": f"REVERSAL RISK: {risk_pct}% ({'HIGH' if risk_pct >= 70 else ('MODERATE' if risk_pct >= 50 else 'LOW')})",
+        "expected_reversal_window_sw": window_sw,
+        "expected_reversal_window_en": window_en,
+        "honest_disclosure_sw": disc_sw,
+        "honest_disclosure_en": disc_en
+    }
+
 def compute_duration_model(symbol: str, trade_type: str, entry: float, tp1: float, atr_val: float) -> dict:
     spec = SYMBOL_SPECS.get(symbol, SYMBOL_SPECS["XAUUSD"])
     pip_sz = spec.get("pip_size", 0.10)
@@ -206,6 +355,88 @@ def compute_market_drivers(session: str, now_dt: datetime) -> dict:
         "upcoming_catalysts_en": up_en
     }
 
+
+
+def compute_reversal_analysis(df15: pd.DataFrame, cur_price: float, direction: int, symbol: str = "EURUSD") -> dict:
+    close = df15["close"]
+    delta = close.diff()
+    gain = (delta.where(delta > 0, 0)).ewm(span=14, adjust=False).mean()
+    loss = (-delta.where(delta < 0, 0)).ewm(span=14, adjust=False).mean()
+    rs = gain / loss.replace(0, 1e-9)
+    rsi = float((100 - (100 / (1 + rs))).iloc[-1])
+
+    is_oversold = rsi <= 35.0
+    is_overbought = rsi >= 65.0
+    is_extreme_oversold = rsi <= 26.0
+    is_extreme_overbought = rsi >= 74.0
+
+    reversal_risk = "LOW"
+    action_modifier_sw = "TRADE INAFUATA TREND"
+    action_modifier_en = "TREND ALIGNED"
+
+    if direction == -1:  # SELL
+        if is_oversold:
+            reversal_risk = "EXTREME" if is_extreme_oversold else "HIGH"
+            cond_sw = f"SOKO LIME-SELL SANA (OVERSOLD EXHAUSTION - RSI={rsi:.1f})"
+            cond_en = f"HEAVILY OVERSOLD (EXHAUSTION ZONE - RSI={rsi:.1f})"
+            action_modifier_sw = "SCALPING YA HARAKA TU (KUWA MAKINI - REVERSAL INAKARIBIA)"
+            action_modifier_en = "QUICK SCALP ONLY (CAUTION - REVERSAL IMMINENT)"
+            honest_advice_sw = (
+                f"UKWELI HALISI KUHUSU SOKO: Soko limeshuka kwa kiasi kikubwa sana (Oversold - RSI={rsi:.1f}). "
+                f"Kuna uwezekano mkubwa wa soko kugeuka ghafla kuelekea juu (Possible Bullish Reversal ndani ya dakika 30 hadi 60). "
+                f"Kuwa makini usidanganyike ku-HOLD trade hii kwa masaa mengi! Kama unachukua SELL hii, iwe ni SCALPING ya haraka tu ya dakika 15 hadi 30 kuchukua pips chache kabla halijageuka, au subiri reversal confirmation uingie BUY."
+            )
+            honest_advice_en = (
+                f"HONEST MARKET TRUTH: The market is heavily oversold following an extended drop (RSI={rsi:.1f}). "
+                f"High probability of an imminent bullish snapback / reversal within 30 to 60 minutes. "
+                f"Exercise caution and avoid long-duration holds! If executing this SELL, treat it strictly as a QUICK SCALP for 15 to 30 minutes before the reversal occurs, or wait for the reversal to BUY."
+            )
+        else:
+            cond_sw = f"TREND SALAMA (MOMENTUM THABITI - RSI={rsi:.1f})"
+            cond_en = f"HEALTHY TREND MOMENTUM (RSI={rsi:.1f})"
+            honest_advice_sw = f"Soko lipo katika mtiririko mzuri wa kushuka bila uchovu mkubwa (RSI={rsi:.1f}). Hakuna viashiria vya kugeuka ghafla sasa hivi."
+            honest_advice_en = f"Market structure shows sustainable downward momentum without immediate exhaustion (RSI={rsi:.1f}). Reversal risk remains low."
+    elif direction == 1:  # BUY
+        if is_overbought:
+            reversal_risk = "EXTREME" if is_extreme_overbought else "HIGH"
+            cond_sw = f"SOKO LIME-BUY SANA (OVERBOUGHT EXHAUSTION - RSI={rsi:.1f})"
+            cond_en = f"HEAVILY OVERBOUGHT (EXHAUSTION ZONE - RSI={rsi:.1f})"
+            action_modifier_sw = "SCALPING YA HARAKA TU (KUWA MAKINI - REVERSAL INAKARIBIA)"
+            action_modifier_en = "QUICK SCALP ONLY (CAUTION - REVERSAL IMMINENT)"
+            honest_advice_sw = (
+                f"UKWELI HALISI KUHUSU SOKO: Soko limepanda kwa kiasi kikubwa mno (Overbought - RSI={rsi:.1f}). "
+                f"Kuna uwezekano mkubwa wa soko kugeuka ghafla kuelekea chini (Possible Bearish Reversal ndani ya dakika 30 hadi 60). "
+                f"Kuwa makini usidanganyike ku-HOLD kwa masaa mengi! Kama unachukua BUY hii, iwe ni SCALPING ya haraka tu ya dakika 15 hadi 30 kuchukua faida ya mapema, au subiri soko ligeuke uingie SELL."
+            )
+            honest_advice_en = (
+                f"HONEST MARKET TRUTH: The market is heavily overbought following an extended rally (RSI={rsi:.1f}). "
+                f"High probability of an imminent bearish mean reversion / reversal within 30 to 60 minutes. "
+                f"Exercise caution and avoid long-duration holds! If taking this BUY, treat it as a QUICK SCALP for 15 to 30 minutes, or wait for reversal confirmation to SELL."
+            )
+        else:
+            cond_sw = f"TREND SALAMA (MOMENTUM THABITI - RSI={rsi:.1f})"
+            cond_en = f"HEALTHY TREND MOMENTUM (RSI={rsi:.1f})"
+            honest_advice_sw = f"Soko lipo katika mtiririko mzuri wa kupanda bila uchovu mkubwa (RSI={rsi:.1f}). Hakuna viashiria vya kugeuka ghafla sasa hivi."
+            honest_advice_en = f"Market structure shows sustainable upward momentum without immediate exhaustion (RSI={rsi:.1f}). Reversal risk remains low."
+    else:
+        cond_sw = f"SOKO LIKO KWENYE UTULIVU (RSI={rsi:.1f})"
+        cond_en = f"MARKET CONSOLIDATION (RSI={rsi:.1f})"
+        honest_advice_sw = "Soko lipo katikati ya kanda ya utulivu. Subiri mwelekeo."
+        honest_advice_en = "Market is ranging. Await directional confirmation."
+
+    return {
+        "rsi": round(rsi, 1),
+        "reversal_risk": reversal_risk,
+        "is_exhaustion": is_oversold or is_overbought,
+        "condition_sw": cond_sw,
+        "condition_en": cond_en,
+        "action_modifier_sw": action_modifier_sw,
+        "action_modifier_en": action_modifier_en,
+        "honest_advice_sw": honest_advice_sw,
+        "honest_advice_en": honest_advice_en,
+        "expected_reversal_window_sw": "Dakika 30 hadi 60" if (is_oversold or is_overbought) else "Hakuna Reversal ya Haraka",
+        "expected_reversal_window_en": "30 to 60 Minutes" if (is_oversold or is_overbought) else "No Imminent Reversal"
+    }
 
 def compute_future_outlook(symbol: str, direction: int, cur_price: float, atr_val: float, mtf_data: dict) -> dict:
     spec = SYMBOL_SPECS.get(symbol, SYMBOL_SPECS["XAUUSD"])
@@ -431,6 +662,8 @@ def run_live_service():
                     trade["duration_model"] = compute_duration_model(sym, trade.get("trade_type", "DAY-TRADE"), float(trade["entry"]), float(trade["tp1"]), atr_val)
                     trade["market_drivers"] = compute_market_drivers(session, now_dt)
                     trade["future_outlook"] = compute_future_outlook(sym, direction_int, cur_price, atr_val, mtf_data)
+                    trade["reversal_analysis"] = compute_reversal_analysis(df15, cur_price, direction_int, sym)
+                    trade["reversal_model"] = compute_reversal_exhaustion_model(df15, direction_int, cur_price, atr_val)
                     pair_signals[sym] = trade
 
                 # ==========================================================
@@ -509,6 +742,8 @@ def run_live_service():
                                 dur_model = compute_duration_model(sym, ttype, cur_price, tpsl["tp1"], atr_val)
                                 mkt_drivers = compute_market_drivers(session, now_dt)
                                 fut_outlook = compute_future_outlook(sym, d, cur_price, atr_val, mtf_data)
+                                rev_analysis = compute_reversal_analysis(df15, cur_price, d, sym)
+                                rev_model = compute_reversal_exhaustion_model(df15, d, cur_price, atr_val)
 
                                 new_trade = {
                                     "signal_id": sig_id,
@@ -545,7 +780,9 @@ def run_live_service():
                                     "mtf_analysis": mtf_data,
                                     "duration_model": dur_model,
                                     "market_drivers": mkt_drivers,
-                                    "future_outlook": fut_outlook
+                                    "future_outlook": fut_outlook,
+                                    "reversal_analysis": rev_analysis,
+                                    "reversal_model": rev_model
                                 }
 
                                 active_trades[sym] = new_trade
@@ -561,6 +798,8 @@ def run_live_service():
 
                         mkt_drivers = compute_market_drivers(session, now_dt)
                         fut_outlook = compute_future_outlook(sym, 0, cur_price, atr_val, mtf_data)
+                        rev_analysis = compute_reversal_analysis(df15, cur_price, 0, sym)
+                        rev_model = compute_reversal_exhaustion_model(df15, 0, cur_price, atr_val)
                         dur_model = {
                             "trade_type": "STANDBY",
                             "distance_pips": 0.0,
@@ -605,7 +844,9 @@ def run_live_service():
                             "mtf_analysis": mtf_data,
                             "duration_model": dur_model,
                             "market_drivers": mkt_drivers,
-                            "future_outlook": fut_outlook
+                            "future_outlook": fut_outlook,
+                            "reversal_model": rev_model,
+                            "reversal_analysis": rev_analysis
                         }
 
             # Master payload
