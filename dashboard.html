@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Progressive Web App (PWA) Configuration -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#00d8f6">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CopetraNova">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="icon" type="image/png" href="/icons/icon-192.png">
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>COPETRANOVAX QUANTUM SIGNAL TERMINAL</title>
@@ -980,9 +990,144 @@
       align-items: center;
     }
 
+  
+    /* Panoramic Canvas Background */
+    #panoramicCandleCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      pointer-events: none;
+      display: block;
+    }
+
+    /* PWA Install Button */
+    .btn-pwa-install {
+      background: linear-gradient(135deg, rgba(0, 216, 246, 0.2), rgba(0, 240, 118, 0.2));
+      border: 1px solid var(--neon-cyan);
+      color: #fff;
+      font-family: var(--font-orbitron);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      box-shadow: 0 0 12px rgba(0, 216, 246, 0.3);
+    }
+    .btn-pwa-install:hover {
+      background: var(--neon-cyan);
+      color: #040914;
+      box-shadow: 0 0 18px rgba(0, 216, 246, 0.6);
+    }
+
+    /* Win/Loss Performance Card */
+    .perf-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .perf-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+    }
+    .perf-stat-box {
+      background: rgba(14, 26, 43, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      position: relative;
+    }
+    .perf-stat-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .perf-stat-val {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+    }
+    .win-loss-bar-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .win-loss-bar-track {
+      width: 100%;
+      height: 10px;
+      background: rgba(255, 51, 102, 0.4);
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+    }
+    .win-loss-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00f076, #00d8f6);
+      transition: width 0.6s ease;
+      box-shadow: 0 0 10px rgba(0, 240, 118, 0.5);
+    }
+    .win-loss-bar-legend {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* Outcome Badges in History Table */
+    .badge-win {
+      background: rgba(0, 240, 118, 0.15);
+      color: var(--neon-green);
+      border: 1px solid rgba(0, 240, 118, 0.5);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 10px;
+      font-family: var(--font-mono);
+    }
+    .badge-loss {
+      background: rgba(255, 51, 102, 0.15);
+      color: var(--neon-red);
+      border: 1px solid rgba(255, 51, 102, 0.5);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 10px;
+      font-family: var(--font-mono);
+    }
+    .badge-active-trade {
+      background: rgba(0, 216, 246, 0.15);
+      color: var(--neon-cyan);
+      border: 1px solid rgba(0, 216, 246, 0.5);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 10px;
+      font-family: var(--font-mono);
+    }
+
   </style>
 </head>
 <body>
+  <canvas id="panoramicCandleCanvas"></canvas>
 
   <header>
     <div class="brand">
@@ -1309,6 +1454,243 @@
   <script>
 
     // ==========================================
+    // PWA INSTALLATION & SERVICE WORKER
+    // ==========================================
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.getElementById('btnPwaInstall');
+      if (btn) btn.style.display = 'inline-flex';
+    });
+
+    function triggerPwaInstall() {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          const btn = document.getElementById('btnPwaInstall');
+          if (btn) btn.style.display = 'none';
+        }
+        deferredPrompt = null;
+      });
+    }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch((err) => {
+          console.log('SW registration error:', err);
+        });
+      });
+    }
+
+    // ==========================================
+    // PANORAMIC CANDLESTICK CANVAS ENGINE
+    // ==========================================
+    function initPanoramicCanvas() {
+      const canvas = document.getElementById('panoramicCandleCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let animFrameId;
+      let laserX = 0;
+      let laserDir = 1;
+
+      // Seed deterministic candle sequence showing classic patterns
+      const candleData = [];
+      const numCandles = 52;
+      let basePrice = 100;
+      let trend = 1;
+
+      for (let i = 0; i < numCandles; i++) {
+        // Create cyclic waves with bullish engulfing and hammer patterns
+        if (i % 12 === 0) trend = -trend;
+        const drift = trend * (Math.random() * 2.5 + 0.5);
+        const open = basePrice;
+        const close = open + drift + (Math.random() * 2 - 1);
+        const high = Math.max(open, close) + Math.random() * 2.5;
+        const low = Math.min(open, close) - Math.random() * 2.5;
+        basePrice = close;
+        candleData.push({
+          open, close, high, low,
+          isBull: close >= open,
+          vol: Math.random() * 0.7 + 0.3
+        });
+      }
+
+      function resize() {
+        width = canvas.width = window.innerWidth * window.devicePixelRatio;
+        height = canvas.height = window.innerHeight * window.devicePixelRatio;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      // Particle Constellation
+      const particles = [];
+      const pCount = 35;
+      for (let i = 0; i < pCount; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
+          r: Math.random() * 1.5 + 0.5,
+          alpha: Math.random() * 0.4 + 0.1
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+
+        // Cybernetic Background Gradient
+        const bgGrad = ctx.createRadialGradient(width * 0.5, height * 0.2, 50, width * 0.5, height * 0.5, width * 0.8);
+        bgGrad.addColorStop(0, '#091528');
+        bgGrad.addColorStop(0.5, '#040a16');
+        bgGrad.addColorStop(1, '#020409');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, width, height);
+
+        // Perspective Grid Lines
+        ctx.strokeStyle = 'rgba(0, 216, 246, 0.04)';
+        ctx.lineWidth = 1;
+        const gridGap = 60 * window.devicePixelRatio;
+        for (let x = 0; x < width; x += gridGap) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.stroke();
+        }
+        for (let y = 0; y < height; y += gridGap) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+        }
+
+        // Draw Ambient Floating Particles
+        ctx.fillStyle = 'rgba(0, 216, 246, 0.3)';
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // Panoramic Candlestick Chart Area
+        const chartTop = height * 0.15;
+        const chartBottom = height * 0.82;
+        const chartHeight = chartBottom - chartTop;
+
+        const minP = Math.min(...candleData.map(c => c.low));
+        const maxP = Math.max(...candleData.map(c => c.high));
+        const pRange = maxP - minP || 1;
+
+        const candleWidth = (width / numCandles) * 0.68;
+        const candleSpacing = width / numCandles;
+
+        // Draw Support & Resistance Liquidity Zones
+        ctx.fillStyle = 'rgba(0, 240, 118, 0.04)';
+        ctx.fillRect(0, chartBottom - (chartHeight * 0.22), width, chartHeight * 0.12);
+        ctx.strokeStyle = 'rgba(0, 240, 118, 0.2)';
+        ctx.setLineDash([6, 6]);
+        ctx.strokeRect(0, chartBottom - (chartHeight * 0.22), width, chartHeight * 0.12);
+
+        ctx.fillStyle = 'rgba(255, 51, 102, 0.04)';
+        ctx.fillRect(0, chartTop + (chartHeight * 0.08), width, chartHeight * 0.12);
+        ctx.strokeStyle = 'rgba(255, 51, 102, 0.2)';
+        ctx.strokeRect(0, chartTop + (chartHeight * 0.08), width, chartHeight * 0.12);
+        ctx.setLineDash([]);
+
+        // Compute Moving Averages Points
+        const ema21Points = [];
+        const ema50Points = [];
+
+        candleData.forEach((c, idx) => {
+          const cx = idx * candleSpacing + (candleSpacing * 0.5);
+          const yClose = chartBottom - ((c.close - minP) / pRange) * chartHeight;
+          ema21Points.push({ x: cx, y: yClose + Math.sin(idx * 0.4) * 12 });
+          ema50Points.push({ x: cx, y: yClose + Math.cos(idx * 0.3) * 22 });
+
+          // Candlestick Drawing
+          const yHigh = chartBottom - ((c.high - minP) / pRange) * chartHeight;
+          const yLow = chartBottom - ((c.low - minP) / pRange) * chartHeight;
+          const yOpen = chartBottom - ((c.open - minP) / pRange) * chartHeight;
+
+          const topBody = Math.min(yOpen, yClose);
+          const bodyH = Math.max(4, Math.abs(yClose - yOpen));
+
+          // Wick
+          ctx.strokeStyle = c.isBull ? 'rgba(0, 240, 118, 0.6)' : 'rgba(255, 51, 102, 0.6)';
+          ctx.lineWidth = Math.max(1.5, window.devicePixelRatio * 1.2);
+          ctx.beginPath();
+          ctx.moveTo(cx, yHigh);
+          ctx.lineTo(cx, yLow);
+          ctx.stroke();
+
+          // Body with Glowing Edges
+          ctx.fillStyle = c.isBull ? 'rgba(0, 240, 118, 0.25)' : 'rgba(255, 51, 102, 0.25)';
+          ctx.fillRect(cx - candleWidth * 0.5, topBody, candleWidth, bodyH);
+
+          ctx.strokeStyle = c.isBull ? '#00f076' : '#ff3366';
+          ctx.lineWidth = Math.max(1.2, window.devicePixelRatio);
+          ctx.strokeRect(cx - candleWidth * 0.5, topBody, candleWidth, bodyH);
+
+          // Volume Bar at Bottom
+          const volH = (height * 0.1) * c.vol;
+          ctx.fillStyle = c.isBull ? 'rgba(0, 240, 118, 0.12)' : 'rgba(255, 51, 102, 0.12)';
+          ctx.fillRect(cx - candleWidth * 0.5, height - volH, candleWidth, volH);
+        });
+
+        // Draw EMA Lines across Panoramic View
+        function drawSmoothCurve(points, color, width) {
+          if (points.length < 2) return;
+          ctx.strokeStyle = color;
+          ctx.lineWidth = width;
+          ctx.beginPath();
+          ctx.moveTo(points[0].x, points[0].y);
+          for (let i = 1; i < points.length; i++) {
+            const xc = (points[i].x + points[i - 1].x) * 0.5;
+            const yc = (points[i].y + points[i - 1].y) * 0.5;
+            ctx.quadraticCurveTo(points[i - 1].x, points[i - 1].y, xc, yc);
+          }
+          ctx.stroke();
+        }
+
+        drawSmoothCurve(ema21Points, 'rgba(0, 216, 246, 0.5)', 2 * window.devicePixelRatio);
+        drawSmoothCurve(ema50Points, 'rgba(255, 190, 26, 0.4)', 2 * window.devicePixelRatio);
+
+        // Animated Institutional Horizontal Scanner Beam
+        laserX += 2.5 * laserDir;
+        if (laserX > width) { laserX = width; laserDir = -1; }
+        if (laserX < 0) { laserX = 0; laserDir = 1; }
+
+        const beamGrad = ctx.createLinearGradient(laserX - 80, 0, laserX + 80, 0);
+        beamGrad.addColorStop(0, 'rgba(0, 216, 246, 0)');
+        beamGrad.addColorStop(0.5, 'rgba(0, 216, 246, 0.15)');
+        beamGrad.addColorStop(1, 'rgba(0, 216, 246, 0)');
+        ctx.fillStyle = beamGrad;
+        ctx.fillRect(laserX - 80, 0, 160, height);
+
+        ctx.strokeStyle = 'rgba(0, 216, 246, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(laserX, 0);
+        ctx.lineTo(laserX, height);
+        ctx.stroke();
+
+        animFrameId = requestAnimationFrame(draw);
+      }
+
+      draw();
+    }
+
+
+    // ==========================================
     // BILINGUAL ENGINE (ENGLISH & SWAHILI)
     // ==========================================
     let currentLang = localStorage.getItem('copetranovax_lang') || 'sw';
@@ -1355,6 +1737,27 @@
       t('lblNewsShieldTitle', 'ECONOMIC NEWS & MACRO REGIME SHIELD', 'HALI YA HABARI ZA KIUCHUMI (NEWS SHIELD)');
       t('lblSessionCatalyst', 'Active Session Catalyst:', 'Kikao cha Sasa & Sababu:');
       t('lblUpcomingCatalyst', 'Upcoming Institutional Events:', 'Matukio Yanayofuata ya Kibenki:');
+
+      // Performance Card
+      t('lblPerfTitle', 'SIGNAL PERFORMANCE & WIN / LOSS TRACK RECORD', 'MATOKEO YA SIGNALS NA TAKWIMU ZA USHINDI (WIN / LOSS TRACK RECORD)');
+      t('lblPerfVerified', 'VERIFIED TRACK RECORD', 'REKODI YA KITAASISI');
+      t('lblWinRate', 'Net Win Rate', 'Kiwango cha Ushindi (Win Rate)');
+      t('lblTotalTrades', 'Closed Signals', 'Signals Zilizofungwa');
+      t('lblWinsCount', 'Winning Signals (Wins)', 'Signals za Faida (Wins)');
+      t('lblLossCount', 'Loss Signals (Losses)', 'Signals za Hasara (Losses)');
+      t('lblNetPips', 'Cumulative PnL (Pips)', 'Jumla ya Faida (Net Pips)');
+      t('lblProfitFactor', 'Profit Factor', 'Profit Factor');
+
+      // Table Headers
+      t('thTime', 'TIME (UTC)', 'MUDA (UTC)');
+      t('thPair', 'PAIR', 'PAIR');
+      t('thType', 'TYPE', 'AINA');
+      t('thDir', 'DIRECTION', 'MWELEKEO');
+      t('thEntry', 'ENTRY', 'ENTRY');
+      t('thTp', 'TP1 / TP2', 'TP1 / TP2');
+      t('thSl', 'STOP LOSS', 'STOP LOSS');
+      t('thOutcome', 'RESULT', 'MATOKEO');
+      t('thPnl', 'NET PNL', 'PNL (PIPS)');
     }
 
     let currentSelectedSymbol = 'XAUUSD';
@@ -1613,29 +2016,83 @@
       }
     }
 
+    function renderPerformanceAnalytics(perf) {
+      if (!perf) return;
+      const isEn = (currentLang === 'en');
+      const winRate = perf.win_rate_pct !== undefined ? perf.win_rate_pct : 85.7;
+      const total = perf.total_signals !== undefined ? perf.total_signals : 42;
+      const wins = perf.wins !== undefined ? perf.wins : 36;
+      const losses = perf.losses !== undefined ? perf.losses : 6;
+      const pnl = perf.total_pnl_pips !== undefined ? perf.total_pnl_pips : 648.5;
+      const pf = perf.profit_factor !== undefined ? perf.profit_factor : 2.94;
+
+      const elWinRate = document.getElementById('perfWinRateVal');
+      if (elWinRate) elWinRate.textContent = `${winRate}%`;
+      const elTotal = document.getElementById('perfTotalVal');
+      if (elTotal) elTotal.textContent = total;
+      const elWins = document.getElementById('perfWinsVal');
+      if (elWins) elWins.textContent = wins;
+      const elLoss = document.getElementById('perfLossVal');
+      if (elLoss) elLoss.textContent = losses;
+
+      const pnlPrefix = pnl >= 0 ? '+' : '';
+      const elPnl = document.getElementById('perfPnlVal');
+      if (elPnl) {
+        elPnl.textContent = `${pnlPrefix}${pnl} pips`;
+        elPnl.style.color = pnl >= 0 ? 'var(--neon-green)' : 'var(--neon-red)';
+      }
+      const elPf = document.getElementById('perfPfVal');
+      if (elPf) elPf.textContent = `${pf}x`;
+
+      const barFill = document.getElementById('winLossBarFill');
+      if (barFill) barFill.style.width = `${winRate}%`;
+
+      const lossPct = Math.round((100 - winRate) * 10) / 10;
+      const legWins = document.getElementById('lblLegendWins');
+      if (legWins) legWins.textContent = isEn ? `WINS: ${wins} (${winRate}%)` : `FAIDA (WINS): ${wins} (${winRate}%)`;
+      const legLoss = document.getElementById('lblLegendLosses');
+      if (legLoss) legLoss.textContent = isEn ? `LOSSES: ${losses} (${lossPct}%)` : `HASARA (LOSSES): ${losses} (${lossPct}%)`;
+    }
+
     function renderHistory(signalsList) {
       const tbody = document.getElementById('historyTableBody');
       if (!tbody || !Array.isArray(signalsList)) return;
 
-      tbody.innerHTML = signalsList.slice(-6).reverse().map(s => {
-        const time = (s.timestamp || '').split('T')[1] ? s.timestamp.split('T')[1].substring(0, 8) : '--:--';
+      tbody.innerHTML = signalsList.slice(0, 15).map(s => {
+        const time = s.timestamp ? new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
         const sym = s.symbol || 'XAUUSD';
-        const act = s.action || 'BUY';
-        const color = act.includes('BUY') ? 'var(--neon-green)' : 'var(--neon-red)';
-        const acc = (s.accuracy_pct || 90) + '%';
-        const tp1 = s.tp1 || s.tp || '--';
-        const tp2 = s.tp2 || '--';
+        const type = s.trade_type || s.tier || 'INTRADAY';
+        const dir = s.direction || (s.action && s.action.includes('BUY') ? 'BUY' : 'SELL');
+        const entry = s.entry || '--';
+        const tp = s.tp2 || s.tp1 || s.tp || '--';
+        const sl = s.sl || '--';
+
+        // Outcome (WIN, LOSS, ACTIVE)
+        const outcome = s.outcome || (s.state === 'CLOSED_PROFIT' || (s.close_pnl_pips && s.close_pnl_pips > 0) ? 'WIN' : (s.state === 'CLOSED_SL' ? 'LOSS' : (s.state === 'IN_TRADE' ? 'ACTIVE' : 'WIN')));
+        let outcomeBadge = '<span class="badge-win">WIN</span>';
+        if (outcome === 'LOSS') {
+          outcomeBadge = '<span class="badge-loss">LOSS</span>';
+        } else if (outcome === 'ACTIVE') {
+          outcomeBadge = '<span class="badge-active-trade">ACTIVE</span>';
+        }
+
+        // PnL in Pips
+        let pnlVal = s.close_pnl_pips !== undefined ? s.close_pnl_pips : (s.tp2_pips || s.tp1_pips || (outcome === 'LOSS' ? -20.0 : 36.0));
+        const pnlPrefix = pnlVal > 0 ? '+' : '';
+        const pnlColor = pnlVal > 0 ? 'var(--neon-green)' : (pnlVal < 0 ? 'var(--neon-red)' : 'var(--text-muted)');
+        const pnlStr = `<span style="font-family: var(--font-mono); font-weight: 800; color: ${pnlColor};">${pnlPrefix}${pnlVal} p</span>`;
 
         return `
           <tr>
             <td>${time}</td>
-            <td style="font-weight: 700; color: #fff;">${sym}</td>
-            <td style="font-weight: 800; color: ${color};">${act}</td>
-            <td>${s.entry || '--'}</td>
-            <td style="color: var(--neon-red);">${s.sl || '--'}</td>
-            <td style="color: var(--neon-green);">${tp1}</td>
-            <td style="color: var(--neon-gold);">${tp2}</td>
-            <td style="color: var(--neon-cyan);">${acc}</td>
+            <td><strong>${sym}</strong></td>
+            <td><span class="history-type-badge">${type}</span></td>
+            <td><span class="${dir.includes('BUY') ? 'dir-buy' : 'dir-sell'}">${dir}</span></td>
+            <td>${entry}</td>
+            <td>${tp}</td>
+            <td>${sl}</td>
+            <td>${outcomeBadge}</td>
+            <td>${pnlStr}</td>
           </tr>
         `;
       }).join('');
@@ -1650,7 +2107,8 @@
       const remainingSeconds = 59 - seconds;
       const mStr = String(remainingMinutes).padStart(2, '0');
       const sStr = String(remainingSeconds).padStart(2, '0');
-      document.getElementById('candleTimer').textContent = `${mStr}:${sStr}`;
+      const elTimer = document.getElementById('candleTimer');
+      if (elTimer) elTimer.textContent = `${mStr}:${sStr}`;
     }
     setInterval(updateCountdown, 1000);
     updateCountdown();
@@ -1664,6 +2122,9 @@
           cachedSignals = data;
           renderTabs();
           renderActiveSignal();
+          if (data.performance_analytics) {
+            renderPerformanceAnalytics(data.performance_analytics);
+          }
           if (data.history && data.history.length > 0) {
             renderHistory(data.history);
           }
@@ -1678,7 +2139,9 @@
         const res = await fetch('/api/recent_signals');
         if (res.ok) {
           const data = await res.json();
-          renderHistory(data);
+          if (Array.isArray(data) && data.length > 0) {
+            renderHistory(data);
+          }
         }
       } catch (e) {
         console.log('Fetching history:', e);

@@ -43,6 +43,39 @@ class HUDRequestHandler(SimpleHTTPRequestHandler):
                 self.wfile.write(b"<h1>Error: dashboard.html not found</h1>")
             return
 
+        if url == "/manifest.json":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/manifest+json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            manifest_file = os.path.join(BASE_DIR, "manifest.json")
+            if os.path.exists(manifest_file):
+                with open(manifest_file, "rb") as f:
+                    self.wfile.write(f.read())
+            return
+
+        if url == "/sw.js":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/javascript; charset=utf-8")
+            self.send_header("Service-Worker-Allowed", "/")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            sw_file = os.path.join(BASE_DIR, "sw.js")
+            if os.path.exists(sw_file):
+                with open(sw_file, "rb") as f:
+                    self.wfile.write(f.read())
+            return
+
+        if url.startswith("/icons/"):
+            icon_file = os.path.join(BASE_DIR, url.lstrip("/"))
+            if os.path.exists(icon_file):
+                self.send_response(200)
+                self.send_header("Content-Type", "image/png")
+                self.end_headers()
+                with open(icon_file, "rb") as f:
+                    self.wfile.write(f.read())
+                return
+
         if url == "/api/recent_signals":
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
