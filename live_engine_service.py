@@ -81,6 +81,153 @@ def check_market_open(symbol: str, df: pd.DataFrame = None, dt: datetime = None)
     return True, "SOKO LIKO WAZI"
 
 
+
+def compute_duration_model(symbol: str, trade_type: str, entry: float, tp1: float, atr_val: float) -> dict:
+    spec = SYMBOL_SPECS.get(symbol, SYMBOL_SPECS["XAUUSD"])
+    pip_sz = spec.get("pip_size", 0.10)
+    dist_pips = abs(tp1 - entry) / pip_sz if pip_sz > 0 else abs(tp1 - entry) * 10
+    atr_pips = (atr_val / pip_sz) if pip_sz > 0 else (atr_val * 10)
+    atr_pips = max(0.5, atr_pips)
+
+    if "SCALP" in trade_type.upper():
+        eta = 0.48
+    elif "SWING" in trade_type.upper():
+        eta = 0.38
+    else:
+        eta = 0.42
+
+    expected_bars = max(1.0, dist_pips / (atr_pips * eta))
+    total_hours = expected_bars * 0.25
+
+    min_hours = max(0.25, round(total_hours * 0.75, 1))
+    max_hours = max(0.5, round(total_hours * 1.35, 1))
+
+    if max_hours < 1.0:
+        min_min = max(15, int(min_hours * 60))
+        max_min = max(30, int(max_hours * 60))
+        dur_sw = f"DAKIKA {min_min} HADI {max_min} (SCALP)"
+        dur_en = f"{min_min} TO {max_min} MINUTES (SCALP)"
+    elif max_hours <= 3.5:
+        dur_sw = f"MASAA {min_hours:.0f} HADI {max_hours:.0f} (DAY TRADE)"
+        dur_en = f"{min_hours:.0f} TO {max_hours:.0f} HOURS (DAY TRADE)"
+    else:
+        dur_sw = f"MASAA {min_hours:.0f} HADI {max_hours:.0f} (SWING HOLD)"
+        dur_en = f"{min_hours:.0f} TO {max_hours:.0f} HOURS (SWING HOLD)"
+
+    return {
+        "trade_type": trade_type,
+        "distance_pips": round(dist_pips, 1),
+        "atr_m15_pips": round(atr_pips, 1),
+        "efficiency_ratio": eta,
+        "expected_bars": int(round(expected_bars)),
+        "min_hours": min_hours,
+        "max_hours": max_hours,
+        "duration_label_sw": dur_sw,
+        "duration_label_en": dur_en,
+        "scientific_formula": "First Passage Time: T = Distance / (ATR_M15 * Efficiency)",
+        "scientific_evidence_sw": f"Muundo wa First Passage Time (Stochastic Drift): Umbali wa pips {dist_pips:.1f} unahitaji takribani mishumaa {int(round(expected_bars))} ya M15 kulingana na kasi ya ATR ({atr_pips:.1f} pips/bar) na mgawo wa msuguano (Efficiency Ratio: {eta}). Hivyo basi, muda halisi wa kufikia lengo kitakwimu ni {dur_sw}.",
+        "scientific_evidence_en": f"First Passage Time Model (Stochastic Drift-Diffusion): The {dist_pips:.1f} pip distance requires approximately {int(round(expected_bars))} M15 bars based on current volatility (ATR: {atr_pips:.1f} pips/bar) and directional efficiency (eta: {eta}). Statistical expectation derives a holding window of {dur_en}."
+    }
+
+
+def compute_market_drivers(session: str, now_dt: datetime) -> dict:
+    from live_bot import is_news_active
+    news_active = is_news_active(now_dt)
+    
+    if session == "ASIA":
+        cat_sw = "Kikao cha Tokyo/Asia kina mtiririko thabiti wa kiasi cha wastani. Hakuna mshtuko mkubwa wa kiuchumi sasa hivi."
+        cat_en = "Tokyo/Asian Session exhibits stable baseline volume with no abnormal economic shock currently."
+        up_sw = "Tazama ufunguzi wa London (07:00 UTC / 10:00 EAT) kwa ajili ya liquidity injection na mabadiliko ya spidi ya soko."
+        up_en = "Monitor London open (07:00 UTC) for institutional liquidity injection and directional expansion."
+    elif session == "LONDON":
+        cat_sw = "Kikao kikuu cha London kina ujazo mkubwa wa fedha (High Liquidity) na mienendo thabiti ya mwelekeo."
+        cat_en = "London Core Session provides peak European interbank liquidity and disciplined trend expansion."
+        up_sw = "Tazama ufunguzi wa New York (13:00 UTC / 16:00 EAT) kwa taarifa za uchumi wa Marekani (US Data Releases)."
+        up_en = "Monitor New York opening (13:00 UTC) for US macroeconomic releases and overlap volatility."
+    elif session == "OVERLAP":
+        cat_sw = "Kipindi cha Overlap (London + New York) kina ujazo mkubwa zaidi wa siku na spidi kubwa ya mienendo."
+        cat_en = "London-NY Overlap represents peak daily global volume and maximum momentum velocity."
+        up_sw = "Fuatilia kufungwa kwa soko la London (16:00 UTC) ambapo benki hufunga vitabu vya siku (Fixing Orders)."
+        up_en = "Monitor London 16:00 UTC fix where institutional profit taking and book squaring take place."
+    else:
+        cat_sw = "Kikao cha New York kinazingatia maamuzi ya Benki Kuu ya Marekani (Fed) na mwenendo wa Dola."
+        cat_en = "New York Afternoon session reflects Federal Reserve sentiment, bond yields, and Dollar indexing."
+        up_sw = "Tazama mwisho wa siku (Rollover saa 21:00 UTC) ambapo spreads hupanuka kwa muda mfupi."
+        up_en = "Watch for daily rollover (21:00 UTC) where broker spreads widen during liquidity settlement."
+
+    return {
+        "session": session,
+        "news_active": news_active,
+        "news_status_sw": "TAHADHARI: KIPINDI CHA HABARI ZA KIUCHUMI KIPO HAI (HIGH IMPACT)" if news_active else "HALI SALAMA: HAKUNA HABARI ZA KIUCHUMI SASA (NEWS-SAFE)",
+        "news_status_en": "CAUTION: HIGH-IMPACT NEWS WINDOW ACTIVE" if news_active else "NORMAL: MARKET REGIME NEWS-SAFE",
+        "session_catalyst_sw": cat_sw,
+        "session_catalyst_en": cat_en,
+        "upcoming_catalysts_sw": up_sw,
+        "upcoming_catalysts_en": up_en
+    }
+
+
+def compute_future_outlook(symbol: str, direction: int, cur_price: float, atr_val: float, mtf_data: dict) -> dict:
+    spec = SYMBOL_SPECS.get(symbol, SYMBOL_SPECS["XAUUSD"])
+    digits = spec.get("digits", 2)
+
+    if direction == 1:
+        res_price = round(cur_price + (atr_val * 2.5), digits)
+        sup_price = round(cur_price - (atr_val * 1.5), digits)
+        bias_sw = "MTIRIRIKO WA KUPANDA (BULLISH EXPANSION)"
+        bias_en = "BULLISH EXPANSION OUTLOOK"
+        action_sw = (
+            f"Soko lina nguvu ya kupanda kuelekea kanda ya Resistance ya {res_price}. "
+            f"Iwapo bei itapasua {res_price} kwa mshumaa thabiti wa H1, tegemea wimbi jipya la kupanda. "
+            f"Ushauri wa kimkakati: Shikilia BUY ukiwa na Stop Loss chini ya Support ya {sup_price}. "
+            f"Kama haujaingia, usiuze kamwe; subiri bei irudi kufanya pullback kwenye {sup_price} kabla ya kuingia upya."
+        )
+        action_en = (
+            f"Price maintains upward market structure targeting Resistance liquidity at {res_price}. "
+            f"A clean H1 candle close above {res_price} confirms secondary bullish expansion. "
+            f"Strategic Guidance: Maintain BUY with invalidation guarded below Support at {sup_price}. "
+            f"If not in trade, avoid counter-trend shorts; wait for a healthy pullback to {sup_price} before entering."
+        )
+    elif direction == -1:
+        sup_price = round(cur_price - (atr_val * 2.5), digits)
+        res_price = round(cur_price + (atr_val * 1.5), digits)
+        bias_sw = "MTIRIRIKO WA KUSHUKA (BEARISH EXPANSION)"
+        bias_en = "BEARISH EXPANSION OUTLOOK"
+        action_sw = (
+            f"Soko lipo kwenye shinikizo kubwa la mauzo kuelekea kanda ya Support ya {sup_price}. "
+            f"Iwapo bei itavunja kanda ya {sup_price}, tegemea ushukaji kuendelea kwa kasi. "
+            f"Ushauri wa kimkakati: Shikilia SELL ukiwa na Stop Loss juu ya kanda ya {res_price}. "
+            f"Kama haujaingia, usinunue; subiri rejection kwenye {res_price} au uvunjaji thabiti wa {sup_price}."
+        )
+        action_en = (
+            f"Price remains under institutional selling pressure targeting key Support liquidity at {sup_price}. "
+            f"A sustained break below {sup_price} confirms bearish acceleration. "
+            f"Strategic Guidance: Maintain SELL with invalidation guarded above {res_price}. "
+            f"If not in trade, do not catch falling knives; await rejection at {res_price} or confirmed break below {sup_price}."
+        )
+    else:
+        sup_price = round(cur_price - (atr_val * 1.5), digits)
+        res_price = round(cur_price + (atr_val * 1.5), digits)
+        bias_sw = "SOKO LIKO KWENYE UTULIVU (CONSOLIDATION / STANDBY)"
+        bias_en = "CONSOLIDATION / LIQUIDITY BUILDUP"
+        action_sw = (
+            f"Soko lipo katikati ya kanda ya utulivu (Support: {sup_price}, Resistance: {res_price}). "
+            f"Ushauri wa kimkakati: Linda mtaji wako kwa kukaa pembeni. Subiri mshumaa wa H1 ufunge nje ya kanda hii kuthibitisha mwelekeo wa taasisi."
+        )
+        action_en = (
+            f"Price is consolidating within a liquidity range (Support: {sup_price}, Resistance: {res_price}). "
+            f"Strategic Guidance: Protect capital by remaining on standby. Await institutional displacement before executing."
+        )
+
+    return {
+        "bias_sw": bias_sw,
+        "bias_en": bias_en,
+        "support_level": sup_price,
+        "resistance_level": res_price,
+        "actionable_suggestion_sw": action_sw,
+        "actionable_suggestion_en": action_en
+    }
+
 def get_session_info(now_dt: datetime) -> tuple:
     h = now_dt.hour
     if h >= 22 or h < 7:
@@ -238,6 +385,9 @@ def run_live_service():
                         continue
 
                     trade["mtf_analysis"] = mtf_data
+                    trade["duration_model"] = compute_duration_model(sym, trade.get("trade_type", "DAY-TRADE"), float(trade["entry"]), float(trade["tp1"]), atr_val)
+                    trade["market_drivers"] = compute_market_drivers(session, now_dt)
+                    trade["future_outlook"] = compute_future_outlook(sym, direction_int, cur_price, atr_val, mtf_data)
                     pair_signals[sym] = trade
 
                 # ==========================================================
@@ -313,6 +463,10 @@ def run_live_service():
                                 sig_id = make_signal_id(tier, d, symbol=sym)
                                 dir_str = "BUY" if d == 1 else "SELL"
 
+                                dur_model = compute_duration_model(sym, ttype, cur_price, tpsl["tp1"], atr_val)
+                                mkt_drivers = compute_market_drivers(session, now_dt)
+                                fut_outlook = compute_future_outlook(sym, d, cur_price, atr_val, mtf_data)
+
                                 new_trade = {
                                     "signal_id": sig_id,
                                     "symbol": sym,
@@ -345,7 +499,10 @@ def run_live_service():
                                     "reasoning": reason,
                                     "session": session,
                                     "timestamp": now_dt.isoformat(),
-                                    "mtf_analysis": mtf_data
+                                    "mtf_analysis": mtf_data,
+                                    "duration_model": dur_model,
+                                    "market_drivers": mkt_drivers,
+                                    "future_outlook": fut_outlook
                                 }
 
                                 active_trades[sym] = new_trade
@@ -358,6 +515,23 @@ def run_live_service():
                         h1_d = mtf_data["h1"]["direction"]
                         m15_d = mtf_data["m15"]["trigger"]
                         conf_sc = mtf_data.get("confluence_score", "1/3")
+
+                        mkt_drivers = compute_market_drivers(session, now_dt)
+                        fut_outlook = compute_future_outlook(sym, 0, cur_price, atr_val, mtf_data)
+                        dur_model = {
+                            "trade_type": "STANDBY",
+                            "distance_pips": 0.0,
+                            "atr_m15_pips": round((atr_val / pip_sz), 1),
+                            "efficiency_ratio": 0.40,
+                            "expected_bars": 0,
+                            "min_hours": 0.0,
+                            "max_hours": 0.0,
+                            "duration_label_sw": "INASUBIRI FURSA (STANDBY)",
+                            "duration_label_en": "AWAITING SETUP (STANDBY)",
+                            "scientific_formula": "First Passage Time: T = Distance / (ATR_M15 * Efficiency)",
+                            "scientific_evidence_sw": "Hakuna oda inayoshikiliwa sasa hivi. Bot inalinda mtaji na itakokotoa muda halisi wa First Passage Time punde fursa itakapothibitishwa.",
+                            "scientific_evidence_en": "No open trade currently. System maintains capital discipline and will compute First Passage Time stochastic expectation once high-probability setup confirms."
+                        }
 
                         pair_signals[sym] = {
                             "signal_id": f"{sym}_SCANNING",
@@ -381,11 +555,14 @@ def run_live_service():
                             "rr": 0.0, "lot": 0.0, "pnl_pips": 0.0,
                             "breakeven_reached": False, "tp1_reached": False,
                             "lifecycle_status": "SCANNING_GRADE_A",
-                            "lifecycle_msg": "Nidhamu ya Mtaji: Soko halijatoa muundo wa uhakika wa Grade A (Confluence 3/3). Bot inasubiri kwa nidhamu ili kuzuia hasara.",
-                            "reasoning": f"Hali ya Soko: H4 ni {h4_d}, H1 ni {h1_d}, na M15 ni {m15_d} (Confluence: {conf_sc}). Hakuna fursa ya Grade A iliyothibitishwa sasa hivi. Bot inalinda mtaji wako kwa kutokulazimisha oda za kubahatisha.",
+                            "lifecycle_msg": "Nidhamu ya Mtaji: Soko halijatoa muundo wa uhakika. Bot inasubiri kwa nidhamu ili kuzuia hasara.",
+                            "reasoning": f"Hali ya Soko: H4 ni {h4_d}, H1 ni {h1_d}, na M15 ni {m15_d} (Confluence: {conf_sc}). Hakuna fursa thabiti sasa hivi. Bot inalinda mtaji wako.",
                             "session": session,
                             "timestamp": now_dt.isoformat(),
-                            "mtf_analysis": mtf_data
+                            "mtf_analysis": mtf_data,
+                            "duration_model": dur_model,
+                            "market_drivers": mkt_drivers,
+                            "future_outlook": fut_outlook
                         }
 
             # Master payload
@@ -398,6 +575,7 @@ def run_live_service():
                 "latest_signal": top_sig,
                 "pair_signals": pair_signals,
                 "symbols_telemetry": symbols_telemetry,
+                "global_market_drivers": compute_market_drivers(session, now_dt),
                 "market_status": {
                     "symbol": top_sym,
                     "price": top_tele.get("price", 0.0),

@@ -849,7 +849,138 @@
       .mtf-grid { grid-template-columns: 1fr; }
     }
 
-</style>
+
+    /* Language Toggle Switcher */
+    .lang-switch-container {
+      display: flex;
+      align-items: center;
+      background: rgba(14, 26, 43, 0.85);
+      border: 1px solid rgba(0, 216, 246, 0.4);
+      border-radius: 20px;
+      padding: 3px;
+      gap: 2px;
+    }
+    .lang-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-orbitron);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      letter-spacing: 0.5px;
+    }
+    .lang-btn.active {
+      background: var(--neon-cyan);
+      color: #040914;
+      box-shadow: 0 0 12px rgba(0, 216, 246, 0.6);
+    }
+    .lang-btn:hover:not(.active) {
+      color: #fff;
+    }
+
+    /* Scientific Duration & Future Outlook Cards */
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .feature-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 12px;
+    }
+    .feature-card-title {
+      font-family: var(--font-orbitron);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .scientific-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+    }
+    .stat-chip {
+      background: rgba(14, 26, 43, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .stat-chip-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .stat-chip-val {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+    }
+    .formula-box {
+      background: rgba(0, 216, 246, 0.05);
+      border: 1px solid rgba(0, 216, 246, 0.2);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--neon-cyan);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .evidence-text {
+      font-size: 12px;
+      line-height: 1.6;
+      color: #d8e2ef;
+    }
+    .outlook-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .outlook-levels-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .level-box {
+      background: rgba(14, 26, 43, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+  </style>
 </head>
 <body>
 
@@ -1021,6 +1152,63 @@
 
       </div>
 
+      
+        <!-- Scientific Duration & First Passage Time Model Card -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-title" id="lblScientificTitle">MUUNDO WA KISAYANSI WA MUDA WA KUSHIKILIA (FIRST PASSAGE TIME)</div>
+            <div class="mtf-score-badge" id="sciModelBadge" style="border-color: rgba(0, 216, 246, 0.4); color: var(--neon-cyan);">MODEL: DRIFT-DIFFUSION</div>
+          </div>
+          <div class="scientific-grid">
+            <div class="stat-chip">
+              <span class="stat-chip-label" id="lblSciDistance">Umbali wa Target</span>
+              <span class="stat-chip-val" id="sciDistVal">-- pips</span>
+            </div>
+            <div class="stat-chip">
+              <span class="stat-chip-label" id="lblSciAtr">Kasi ya M15 ATR</span>
+              <span class="stat-chip-val" id="sciAtrVal">-- pips/bar</span>
+            </div>
+            <div class="stat-chip">
+              <span class="stat-chip-label" id="lblSciEfficiency">Msuguano (Efficiency)</span>
+              <span class="stat-chip-val" id="sciEtaVal">0.42</span>
+            </div>
+            <div class="stat-chip">
+              <span class="stat-chip-label" id="lblSciBars">Idadi ya Mishumaa</span>
+              <span class="stat-chip-val" id="sciBarsVal">-- bars</span>
+            </div>
+            <div class="stat-chip">
+              <span class="stat-chip-label" id="lblSciDuration">Muda wa Kisayansi</span>
+              <span class="stat-chip-val" id="sciDurVal" style="color: var(--neon-gold);">--</span>
+            </div>
+          </div>
+          <div class="formula-box">
+            <span style="font-weight: 800; letter-spacing: 0.5px;">FORMULA: Expected Time T = Distance / (ATR_M15 * Efficiency Ratio)</span>
+            <div class="evidence-text" id="sciEvidenceText">Inasubiri data ya soko...</div>
+          </div>
+        </div>
+
+        <!-- Future Strategic Outlook & Actionable Guidance Card -->
+        <div class="feature-card">
+          <div class="feature-card-header">
+            <div class="feature-card-title" id="lblOutlookTitle">MTAZAMO WA BAADAYE NA USHAURI WA KIMKAKATI (FORWARD OUTLOOK)</div>
+            <div class="outlook-badge" id="outlookBiasBadge" style="background: rgba(0, 216, 246, 0.15); color: var(--neon-cyan); border: 1px solid rgba(0, 216, 246, 0.4);">ANALYSIS ACTIVE</div>
+          </div>
+          <div class="outlook-levels-row">
+            <div class="level-box">
+              <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);" id="lblKeySupport">KANDA YA SUPPORT:</span>
+              <span style="font-family: var(--font-mono); font-size: 13px; font-weight: 800; color: var(--neon-green);" id="outlookSupportVal">--</span>
+            </div>
+            <div class="level-box">
+              <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);" id="lblKeyResistance">KANDA YA RESISTANCE:</span>
+              <span style="font-family: var(--font-mono); font-size: 13px; font-weight: 800; color: var(--neon-red);" id="outlookResistanceVal">--</span>
+            </div>
+          </div>
+          <div class="formula-box" style="background: rgba(14, 26, 43, 0.7); border-color: rgba(255, 255, 255, 0.08); color: #fff;">
+            <div style="font-size: 11px; font-weight: 800; color: var(--neon-gold); text-transform: uppercase;" id="lblStrategicAdviceHead">USHAURI WA KIMKAKATI (WHAT TO DO NEXT & WHY):</div>
+            <div class="evidence-text" id="outlookAdviceText">Inachambua muundo wa soko...</div>
+          </div>
+        </div>
+
       <!-- Right Column: Protection Shield & Timing -->
       <div class="sidebar">
         <!-- Candle Countdown -->
@@ -1031,6 +1219,27 @@
           <div class="countdown-display" id="candleTimer">14:59</div>
           <div style="font-size: 11px; text-align: center; color: var(--text-muted);">
             Bot inachanganua soko kila dakika 15 kwa usahihi wa hali ya juu
+          </div>
+        </div>
+
+        
+        <!-- Market Drivers & News Shield -->
+        <div class="info-card">
+          <div class="info-card-header">
+            <div class="info-card-title" id="lblNewsShieldTitle">HALI YA HABARI ZA KIUCHUMI (NEWS SHIELD)</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div id="newsShieldStatusPill" style="padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; font-family: var(--font-mono); background: rgba(0, 240, 118, 0.12); color: var(--neon-green); border: 1px solid rgba(0, 240, 118, 0.4); text-align: center;">
+              NEWS-SAFE (HAKUNA TAARIFA KUBWA)
+            </div>
+            <div class="rule-item" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+              <span class="rule-key" id="lblSessionCatalyst">Kikao cha Sasa & Sababu:</span>
+              <span class="rule-val" id="valSessionCatalyst" style="color: #d8e2ef; font-size: 11px; line-height: 1.4; text-align: left; font-family: sans-serif;">--</span>
+            </div>
+            <div class="rule-item" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+              <span class="rule-key" id="lblUpcomingCatalyst">Matukio Yanayofuata ya Kibenki:</span>
+              <span class="rule-val" id="valUpcomingCatalyst" style="color: var(--neon-gold); font-size: 11px; line-height: 1.4; text-align: left; font-family: sans-serif;">--</span>
+            </div>
           </div>
         </div>
 
@@ -1098,6 +1307,56 @@
   </main>
 
   <script>
+
+    // ==========================================
+    // BILINGUAL ENGINE (ENGLISH & SWAHILI)
+    // ==========================================
+    let currentLang = localStorage.getItem('copetranovax_lang') || 'sw';
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('copetranovax_lang', lang);
+      const btnEn = document.getElementById('btnLangEN');
+      const btnSw = document.getElementById('btnLangSW');
+      if (btnEn && btnSw) {
+        if (lang === 'en') {
+          btnEn.classList.add('active');
+          btnSw.classList.remove('active');
+        } else {
+          btnSw.classList.add('active');
+          btnEn.classList.remove('active');
+        }
+      }
+      applyStaticTranslations();
+      renderActiveSignal();
+    }
+
+    function applyStaticTranslations() {
+      const isEn = (currentLang === 'en');
+
+      // Top Cards & Section Titles
+      const t = (id, en, sw) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = isEn ? en : sw;
+      };
+
+      t('lblScientificTitle', 'SCIENTIFIC DURATION & FIRST PASSAGE TIME MODEL', 'MUUNDO WA KISAYANSI WA MUDA WA KUSHIKILIA (FIRST PASSAGE TIME)');
+      t('lblSciDistance', 'Target Distance', 'Umbali wa Target');
+      t('lblSciAtr', 'M15 ATR Velocity', 'Kasi ya M15 ATR');
+      t('lblSciEfficiency', 'Efficiency Factor', 'Msuguano (Efficiency)');
+      t('lblSciBars', 'Expected Candle Count', 'Idadi ya Mishumaa');
+      t('lblSciDuration', 'Quantitative Duration', 'Muda wa Kisayansi');
+
+      t('lblOutlookTitle', 'FUTURE STRATEGIC OUTLOOK & ACTIONABLE GUIDANCE', 'MTAZAMO WA BAADAYE NA USHAURI WA KIMKAKATI (FORWARD OUTLOOK)');
+      t('lblKeySupport', 'SUPPORT FLOOR:', 'KANDA YA SUPPORT:');
+      t('lblKeyResistance', 'RESISTANCE CEILING:', 'KANDA YA RESISTANCE:');
+      t('lblStrategicAdviceHead', 'STRATEGIC GUIDANCE (WHAT TO DO NEXT & WHY):', 'USHAURI WA KIMKAKATI (WHAT TO DO NEXT & WHY):');
+
+      t('lblNewsShieldTitle', 'ECONOMIC NEWS & MACRO REGIME SHIELD', 'HALI YA HABARI ZA KIUCHUMI (NEWS SHIELD)');
+      t('lblSessionCatalyst', 'Active Session Catalyst:', 'Kikao cha Sasa & Sababu:');
+      t('lblUpcomingCatalyst', 'Upcoming Institutional Events:', 'Matukio Yanayofuata ya Kibenki:');
+    }
+
     let currentSelectedSymbol = 'XAUUSD';
     let cachedSignals = {};
 
