@@ -1188,9 +1188,12 @@
       const badge = document.getElementById('cardActionBadge');
       badge.className = 'signal-action-badge';
 
-      if (!isMarketOpen || action.includes('CLOSED') || action.includes('STANDBY')) {
+      if (!isMarketOpen || action.includes('CLOSED')) {
         badge.classList.add('badge-standby');
         badge.textContent = 'STANDBY (SOKO LIMEFUNGWA)';
+      } else if (action.includes('SCANNING') || action.includes('STANDBY') || sig.state === 'SCANNING') {
+        badge.classList.add('badge-standby');
+        badge.textContent = 'SCANNING (GRADE A ONLY)';
       } else if (action.includes('BUY')) {
         badge.classList.add('badge-buy');
         badge.textContent = 'BUY NOW';
@@ -1207,11 +1210,10 @@
       document.getElementById('valTP1').textContent = tp1;
       document.getElementById('valTP2').textContent = tp2;
 
-      document.getElementById('sideAccuracy').textContent = isMarketOpen ? `${acc}% (${grade})` : 'STANDBY';
-      document.getElementById('sideStyle').textContent = isMarketOpen ? style : 'MARKET CLOSED';
+      document.getElementById('sideAccuracy').textContent = isMarketOpen ? (acc > 0 ? `${acc}% (${grade})` : 'NIDHAMU YA MTAJI') : 'STANDBY';
+      document.getElementById('sideStyle').textContent = isMarketOpen ? (sig.state === 'IN_TRADE' ? style : 'INASUBIRI GRADE A') : 'MARKET CLOSED';
       document.getElementById('signalReasoning').textContent = reason;
 
-      
       // Update Lifecycle Card
       const isLocked = (sig.state === 'IN_TRADE');
       const lBadge = document.getElementById('lifecycleBadge');
@@ -1222,19 +1224,21 @@
       if (lBadge && lPnl && lMsg) {
         const pnlPips = sig.pnl_pips !== undefined ? sig.pnl_pips : 0.0;
         const pnlPrefix = pnlPips >= 0 ? '+' : '';
-        lPnl.textContent = `LIVE PNL: ${pnlPrefix}${pnlPips} PIPS`;
-        lPnl.className = 'lifecycle-pnl ' + (pnlPips >= 0 ? 'pnl-positive' : 'pnl-negative');
 
         if (isLocked) {
+          lPnl.textContent = `LIVE PNL: ${pnlPrefix}${pnlPips} PIPS`;
+          lPnl.className = 'lifecycle-pnl ' + (pnlPips >= 0 ? 'pnl-positive' : 'pnl-negative');
           lBadge.textContent = `TRADE IPO WAZI (${sig.direction} LOCKED)`;
           lBadge.className = 'lifecycle-badge ' + (sig.direction === 'BUY' ? '' : 'badge-locked-sell');
           if (lCard) lCard.className = 'trade-lifecycle-card ' + (sig.direction === 'BUY' ? '' : 'locked-sell');
-          lMsg.textContent = sig.lifecycle_msg || 'Trade hii imefungwa (Locked). Mtiririko unafuata muundo wa H4/H1; kelele za mshumaa wa M15 haziruhusiwi kubadili oda.';
+          lMsg.textContent = sig.lifecycle_msg || 'Trade ya Grade A imefungwa (Locked). Mtiririko unafuata muundo wa H4/H1; kelele za mshumaa wa M15 haziruhusiwi kubadili oda.';
         } else {
-          lBadge.textContent = 'SCANNING FOR SETUP';
+          lPnl.textContent = 'HALI: NIDHAMU YA MTAJI';
+          lPnl.className = 'lifecycle-pnl';
+          lBadge.textContent = 'SCANNING (GRADE A ONLY)';
           lBadge.className = 'lifecycle-badge';
           if (lCard) lCard.className = 'trade-lifecycle-card';
-          lMsg.textContent = 'Hakuna trade iliyo wazi kwa sasa kwenye pair hii. Bot inasubiri mshumaa wa M15 ufungwe ukiwa unakubaliana na H4/H1.';
+          lMsg.textContent = sig.lifecycle_msg || 'Soko halijatoa muundo wa uhakika wa Grade A (Confluence 3/3). Bot inasubiri kwa nidhamu ili kulinda mtaji wako dhidi ya hasara.';
         }
 
         document.getElementById('msEntryVal').textContent = entry;

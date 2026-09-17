@@ -848,28 +848,49 @@ def compute_accuracy_and_reasoning(direction: int, tier: str, trade_type: str,
 
 def compute_dual_tpsl(direction: int, entry: float, tier: str, trade_type: str,
                       atr: float, confidence: float, accuracy: float,
-                      symbol: str = "XAUUSD") -> dict:
+                      symbol: str = "XAUUSD", df: pd.DataFrame = None) -> dict:
     from risk_engine import SYMBOL_SPECS
     spec   = SYMBOL_SPECS.get(symbol, SYMBOL_SPECS["XAUUSD"])
     pip_sz = spec.get("pip_size", 0.10)
     digits = spec.get("digits", 2)
-    mult   = spec.get("sl_mult", 1.2) * SL_MULT.get(tier, 1.2)
 
-    sl_price = atr * mult
-    min_sl_p = 12 if symbol == "XAUUSD" else 8
-    sl_pips  = max(min_sl_p, int(sl_price / pip_sz))
-
-    # Dual Take Profit Strategy:
-    # TP1: Quick conservative bank (funga 50% ya faida mapema)
-    # TP2: Extended trend runner (fuatilia trend)
-    if trade_type == "SCALPING":
-        sl_pips = min(sl_pips, 22 if symbol == "XAUUSD" else 16)
-        tp1_pips = int(sl_pips * 1.2)
-        tp2_pips = int(sl_pips * 2.0)
+    # Realistic institutional min SL pips based on asset volatility
+    if symbol == "XAUUSD":
+        min_sl_pips = 75.0   # $7.50 minimum breathing room for Gold
+        max_sl_pips = 160.0  # $16.00 maximum cap
+    elif "JPY" in symbol:
+        min_sl_pips = 25.0
+        max_sl_pips = 55.0
     else:
-        sl_pips = max(min_sl_p, min(sl_pips, 40 if symbol == "XAUUSD" else 30))
-        tp1_pips = int(sl_pips * 1.5)
-        tp2_pips = int(sl_pips * 2.8)
+        min_sl_pips = 20.0   # 20 pips minimum for EURUSD / GBPUSD
+        max_sl_pips = 45.0
+
+    # Calculate structure-based SL from recent bars
+    if df is not None and len(df) >= 10:
+        lookback = df.tail(15)
+        if direction == 1:
+            swing_low = float(lookback["low"].min())
+            struct_dist_pips = (entry - swing_low) / pip_sz
+            calc_sl_pips = max(min_sl_pips, struct_dist_pips + (atr * 1.5 / pip_sz))
+        else:
+            swing_high = float(lookback["high"].max())
+            struct_dist_pips = (swing_high - entry) / pip_sz
+            calc_sl_pips = max(min_sl_pips, struct_dist_pips + (atr * 1.5 / pip_sz))
+    else:
+        calc_sl_pips = max(min_sl_pips, (atr * 1.8 / pip_sz))
+
+    sl_pips = int(round(min(max_sl_pips, max(min_sl_pips, calc_sl_pips))))
+
+    # Risk-Reward Calibration
+    if "SCALP" in trade_type.upper():
+        tp1_pips = int(round(sl_pips * 1.3))
+        tp2_pips = int(round(sl_pips * 2.2))
+    elif "SWING" in trade_type.upper():
+        tp1_pips = int(round(sl_pips * 1.8))
+        tp2_pips = int(round(sl_pips * 3.2))
+    else: # DAY-TRADE
+        tp1_pips = int(round(sl_pips * 1.5))
+        tp2_pips = int(round(sl_pips * 2.6))
 
     if direction == 1:
         sl  = round(entry - sl_pips * pip_sz, digits)
@@ -889,8 +910,9 @@ def compute_dual_tpsl(direction: int, entry: float, tier: str, trade_type: str,
         "sl": sl, "tp": tp2, "tp1": tp1, "tp2": tp2,
         "sl_pips": sl_pips, "tp_pips": tp2_pips,
         "tp1_pips": tp1_pips, "tp2_pips": tp2_pips,
-        "rr": round(tp2_pips / sl_pips, 1) if sl_pips > 0 else 2.0,
-        "grade": grade
+        "rr": round(tp2_pips / sl_pips, 1) if sl_pips > 0 else 2.5,
+        "grade": grade,
+        "lot": 0.01
     }
 
 
