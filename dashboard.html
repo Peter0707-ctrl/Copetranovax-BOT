@@ -19,9 +19,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #07090e;
-      --card-bg: #0d121d;
-      --card-border: #1a2336;
+      --bg-dark: #050811;
+      --card-bg: rgba(13, 20, 32, 0.72);
+      --card-border: rgba(0, 216, 246, 0.22);
       --card-hover: #162032;
       --text-main: #f0f4fc;
       --text-muted: #7e8ba6;
@@ -46,15 +46,19 @@
     }
 
     body {
-      background-color: var(--bg-dark);
+      background-color: #050811;
       color: var(--text-main);
       font-family: var(--font-sans);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       background-image: 
-        radial-gradient(circle at 50% 0%, rgba(0, 216, 246, 0.05) 0%, transparent 60%),
-        radial-gradient(circle at 10% 40%, rgba(0, 240, 118, 0.03) 0%, transparent 40%);
+        linear-gradient(rgba(5, 8, 17, 0.50), rgba(5, 8, 17, 0.75)),
+        url('/assets/panoramic_candlestick_bg.png');
+      background-size: cover;
+      background-position: center top;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
     }
 
     header {
@@ -1444,9 +1448,146 @@
       }
     }
 
+  
+    /* Panoramic Picture Background Layers */
+    .panoramic-bg-image-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-image: url('/assets/panoramic_candlestick_bg.png');
+      background-size: cover;
+      background-position: center top;
+      background-repeat: no-repeat;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.60;
+      filter: contrast(115%) brightness(105%);
+    }
+
+    #panoramicCandleCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+      display: block;
+    }
+
+    header, .container, .sidebar, footer {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Glassmorphic Card Styling */
+    .signal-card, .info-card, .level-card, .trade-hold-card, .trade-lifecycle-card, .reversal-card, .mtf-card, .future-outlook-card, .market-drivers-card, .perf-card, .scientific-card {
+      backdrop-filter: blur(14px) !important;
+      -webkit-backdrop-filter: blur(14px) !important;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45) !important;
+    }
+
+    /* Panoramic Candlestick Picture Card in Dashboard */
+    .panoramic-showcase-card {
+      background: var(--card-bg);
+      border: 1px solid var(--neon-cyan);
+      border-radius: 14px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 0 25px rgba(0, 216, 246, 0.15);
+      position: relative;
+      overflow: hidden;
+    }
+    .panoramic-showcase-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .panoramic-showcase-title {
+      font-family: var(--font-orbitron);
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--neon-cyan);
+      letter-spacing: 0.8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panoramic-showcase-pill {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--neon-gold);
+      background: rgba(255, 190, 26, 0.12);
+      border: 1px solid rgba(255, 190, 26, 0.35);
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+    .panoramic-img-container {
+      position: relative;
+      width: 100%;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(0, 216, 246, 0.3);
+      background: #060a12;
+    }
+    .panoramic-display-img {
+      width: 100%;
+      height: auto;
+      max-height: 280px;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.4s ease;
+      cursor: pointer;
+    }
+    .panoramic-display-img:hover {
+      transform: scale(1.02);
+    }
+    .panoramic-patterns-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .pattern-tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .pt-bull {
+      background: rgba(0, 240, 118, 0.15);
+      border: 1px solid rgba(0, 240, 118, 0.4);
+      color: var(--neon-green);
+    }
+    .pt-bear {
+      background: rgba(255, 51, 102, 0.15);
+      border: 1px solid rgba(255, 51, 102, 0.4);
+      color: var(--neon-red);
+    }
+    .pt-ema {
+      background: rgba(0, 216, 246, 0.15);
+      border: 1px solid rgba(0, 216, 246, 0.4);
+      color: var(--neon-cyan);
+    }
+    .pt-gold {
+      background: rgba(255, 190, 26, 0.15);
+      border: 1px solid rgba(255, 190, 26, 0.4);
+      color: var(--neon-gold);
+    }
+
   </style>
 </head>
 <body>
+  <div class="panoramic-bg-image-layer" id="panoramicBgImage"></div>
   <canvas id="panoramicCandleCanvas"></canvas>
 
   <header>
@@ -1472,6 +1613,31 @@
       <div class="tabs-label">CHAGUA PAIR YA KUTRADE (SELECT SYMBOL)</div>
       <div class="pair-tabs" id="pairTabs">
         <!-- Injected via JavaScript -->
+      </div>
+    </div>
+
+    
+    <!-- Panoramic Candlestick Chart Showcase Card (Picha Halisi ya Chati) -->
+    <div class="panoramic-showcase-card" id="panoramicShowcaseCard">
+      <div class="panoramic-showcase-header">
+        <div class="panoramic-showcase-title">
+          CHATI KUBWA YA MISHUMAA (PANORAMIC CANDLESTICK MARKET STRUCTURE)
+        </div>
+        <div class="panoramic-showcase-pill">INSTITUTIONAL HUD VIEW // 52 CANDLES</div>
+      </div>
+      <div class="panoramic-img-container">
+        <a href="/assets/panoramic_candlestick_bg.png" target="_blank" title="Bofya kufungua picha kamili ya chati (Full 2560x1440 HD)">
+          <img src="/assets/panoramic_candlestick_bg.png" alt="Panoramic Candlestick Structure" class="panoramic-display-img">
+        </a>
+      </div>
+      <div class="panoramic-patterns-bar">
+        <span class="pattern-tag pt-bull">BULLISH ENGULFING</span>
+        <span class="pattern-tag pt-bull">HAMMER / PIN BAR</span>
+        <span class="pattern-tag pt-bull">MORNING STAR REVERSAL</span>
+        <span class="pattern-tag pt-bull">THREE WHITE SOLDIERS</span>
+        <span class="pattern-tag pt-bear">BEARISH PIN BAR (RESISTANCE)</span>
+        <span class="pattern-tag pt-ema">EMA 21 DYNAMIC (CYAN)</span>
+        <span class="pattern-tag pt-gold">EMA 50 BASELINE (GOLD)</span>
       </div>
     </div>
 
@@ -1906,13 +2072,8 @@
       function draw() {
         ctx.clearRect(0, 0, width, height);
 
-        // Cybernetic Background Gradient
-        const bgGrad = ctx.createRadialGradient(width * 0.5, height * 0.2, 50, width * 0.5, height * 0.5, width * 0.8);
-        bgGrad.addColorStop(0, '#091528');
-        bgGrad.addColorStop(0.5, '#040a16');
-        bgGrad.addColorStop(1, '#020409');
-        ctx.fillStyle = bgGrad;
-        ctx.fillRect(0, 0, width, height);
+        // Transparent overlay on top of the panoramic candlestick picture
+        // Canvas adds dynamic cyber scanning laser and ambient floating neon particles
 
         // Perspective Grid Lines
         ctx.strokeStyle = 'rgba(0, 216, 246, 0.04)';

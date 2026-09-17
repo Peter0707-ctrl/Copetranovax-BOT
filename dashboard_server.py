@@ -66,13 +66,21 @@ class HUDRequestHandler(SimpleHTTPRequestHandler):
                     self.wfile.write(f.read())
             return
 
-        if url.startswith("/icons/"):
-            icon_file = os.path.join(BASE_DIR, url.lstrip("/"))
-            if os.path.exists(icon_file):
+        if url.startswith("/icons/") or url.startswith("/assets/"):
+            asset_file = os.path.join(BASE_DIR, url.lstrip("/"))
+            if os.path.exists(asset_file):
                 self.send_response(200)
-                self.send_header("Content-Type", "image/png")
+                if asset_file.endswith(".png"):
+                    self.send_header("Content-Type", "image/png")
+                elif asset_file.endswith(".svg"):
+                    self.send_header("Content-Type", "image/svg+xml")
+                elif asset_file.endswith(".jpg") or asset_file.endswith(".jpeg"):
+                    self.send_header("Content-Type", "image/jpeg")
+                else:
+                    self.send_header("Content-Type", "application/octet-stream")
+                self.send_header("Cache-Control", "public, max-age=86400")
                 self.end_headers()
-                with open(icon_file, "rb") as f:
+                with open(asset_file, "rb") as f:
                     self.wfile.write(f.read())
                 return
 
